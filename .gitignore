@@ -1,0 +1,13 @@
+ExhibitGuide.code-workspace
+Images/
+Presentation 1/
+Presentation 2/
+Reading - Software Development Lifecycle for Full Stack Software Development*
+Research/
+skills/
+
+# Local environment artifacts
+venv/
+.DS_Store
+__pycache__/
+*.pyc
