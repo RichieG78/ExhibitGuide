@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,7 +26,13 @@ SECRET_KEY = 'django-insecure-b_civ52+_p#wg-=63tig8ewt8-(%fxe^(4nsx24blvokw(b+&x
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+def _csv_env(value):
+    return [item.strip() for item in value.split(',') if item.strip()]
+
+
+ALLOWED_HOSTS = _csv_env(
+    os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,exhibitguide.onrender.com')
+)
 
 
 # Application definition
