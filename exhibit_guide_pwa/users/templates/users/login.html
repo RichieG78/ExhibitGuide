@@ -1,0 +1,39 @@
+{% extends "exhibits/base.html" %}
+{% block content %}
+<main class="exhibit-shell">
+  <h1>Sign In</h1>
+  <h2>Access your account</h2>
+
+  <form method="post" style="margin-top: 22px;">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div style="margin-bottom: 14px; color: #8b1a1a;">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <div style="margin-bottom: 12px;">
+      <label for="id_username" style="display: block; margin-bottom: 6px;">Username</label>
+      <input type="text" name="username" id="id_username" required autofocus style="width: 100%; padding: 10px 12px; border: 1px solid #d8c8b0; border-radius: 10px;">
+    </div>
+
+    <div style="margin-bottom: 16px;">
+      <label for="id_password" style="display: block; margin-bottom: 6px;">Password</label>
+      <input type="password" name="password" id="id_password" required style="width: 100%; padding: 10px 12px; border: 1px solid #d8c8b0; border-radius: 10px;">
+    </div>
+
+    {% if request.GET.next %}
+      <input type="hidden" name="next" value="{{ request.GET.next }}">
+    {% endif %}
+
+    <button type="submit" style="padding: 12px 18px; border: 0; border-radius: 999px; background: #8b5e34; color: #fff; cursor: pointer;">
+      Log In
+    </button>
+  </form>
+
+  <p style="margin-top: 14px; color: #6f6253;">
+    New here? <a href="{% url 'register' %}">Create an account</a>
+  </p>
+</main>
+{% endblock content %}

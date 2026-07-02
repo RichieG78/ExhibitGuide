@@ -79,7 +79,8 @@
             gap: 12px;
         }
 
-        .actions button {
+        .actions button,
+        .actions .button-link {
             padding: 14px 20px;
             border: 0;
             border-radius: 999px;
@@ -89,10 +90,14 @@
             font-size: 1rem;
             cursor: pointer;
             transition: background-color 140ms ease, transform 140ms ease;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .actions button:hover,
-        .actions button:focus-visible {
+        .actions button:focus-visible,
+        .actions .button-link:hover,
+        .actions .button-link:focus-visible {
             background: var(--accent-strong);
             transform: translateY(-1px);
         }
@@ -163,7 +168,7 @@
             <button type="button">Listen</button>
             <button type="button" id="read-button" aria-controls="reading-panel" aria-expanded="false">Read</button>
             <button type="button" id="view-button" aria-controls="view-panel" aria-expanded="false">View</button>
-            <button type="button">Express Interest</button>
+            <a href="{% url 'register' %}" class="button-link">Express Interest</a>
         </div>
 
         <section id="reading-panel" class="reading-panel" aria-live="polite">
