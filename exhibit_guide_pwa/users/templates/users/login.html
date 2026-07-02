@@ -7,6 +7,10 @@
   <form method="post" style="margin-top: 22px;">
     {% csrf_token %}
 
+    {% if interest_exhibit_id %}
+      <input type="hidden" name="interest_exhibit" value="{{ interest_exhibit_id }}">
+    {% endif %}
+
     {% if form.non_field_errors %}
       <div style="margin-bottom: 14px; color: #8b1a1a;">
         {{ form.non_field_errors }}
@@ -33,7 +37,10 @@
   </form>
 
   <p style="margin-top: 14px; color: #6f6253;">
-    New here? <a href="{% url 'register' %}">Create an account</a>
+    New here? <a href="{% url 'register' %}{% if interest_exhibit_id %}?interest_exhibit={{ interest_exhibit_id }}{% endif %}">Create an account</a>
+  </p>
+  <p style="margin-top: 8px; color: #6f6253;">
+    Forgot your password? <a href="{% url 'password_reset' %}">Reset it</a>
   </p>
 </main>
 {% endblock content %}

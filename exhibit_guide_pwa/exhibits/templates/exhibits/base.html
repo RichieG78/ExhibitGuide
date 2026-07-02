@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Weight of Light</title>
+    <title>{% if featured_exhibit %}{{ featured_exhibit.artwork }}{% else %}The Weight of Light{% endif %}</title>
     <style>
         :root {
             --bg: #f7f1e8;
@@ -201,14 +201,14 @@
             </div>
         {% endif %}
 
-        <p class="eyebrow">Hargreaves Fine Art</p>
-        <h1>The Weight of Light</h1>
-        <h2>Maya Hargreaves</h2>
+        <p class="eyebrow">{% if featured_exhibit %}{{ featured_exhibit.gallery_name }}{% else %}Hargreaves Fine Art{% endif %}</p>
+        <h1>{% if featured_exhibit %}{{ featured_exhibit.artwork }}{% else %}The Weight of Light{% endif %}</h1>
+        <h2>{% if featured_exhibit %}{{ featured_exhibit.artist }}{% else %}Maya Hargreaves{% endif %}</h2>
 
         <div class="hero-art">
             <img
-                src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 420'><defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='%23f6ecd9'/><stop offset='1' stop-color='%23d2b185'/></linearGradient></defs><rect width='720' height='420' fill='url(%23g)'/><path d='M170 300 C250 90, 470 90, 550 300' fill='none' stroke='%23ffffff' stroke-width='22' stroke-linecap='round'/><path d='M205 288 C270 130, 450 130, 515 288' fill='none' stroke='%23b76b2e' stroke-width='18' stroke-linecap='round'/><circle cx='360' cy='170' r='48' fill='%238d4a28' opacity='0.85'/></svg>"
-                alt="Abstract placeholder artwork for The Weight of Light"
+                src="{% if featured_exhibit and featured_exhibit.image_url %}{{ featured_exhibit.image_url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 420'><defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='%23f6ecd9'/><stop offset='1' stop-color='%23d2b185'/></linearGradient></defs><rect width='720' height='420' fill='url(%23g)'/><path d='M170 300 C250 90, 470 90, 550 300' fill='none' stroke='%23ffffff' stroke-width='22' stroke-linecap='round'/><path d='M205 288 C270 130, 450 130, 515 288' fill='none' stroke='%23b76b2e' stroke-width='18' stroke-linecap='round'/><circle cx='360' cy='170' r='48' fill='%238d4a28' opacity='0.85'/></svg>{% endif %}"
+                alt="Artwork preview"
             >
         </div>
 
@@ -217,9 +217,14 @@
             <button type="button" id="read-button" aria-controls="reading-panel" aria-expanded="false">Read</button>
             <button type="button" id="view-button" aria-controls="view-panel" aria-expanded="false">View</button>
             {% if not user.is_authenticated %}
-                <a href="{% url 'register' %}" class="button-link">Express Interest</a>
+                {% if featured_exhibit %}
+                    <a href="{% url 'register' %}?interest_exhibit={{ featured_exhibit.id }}" class="button-link">Express Interest</a>
+                {% else %}
+                    <a href="{% url 'register' %}" class="button-link">Express Interest</a>
+                {% endif %}
             {% endif %}
             {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="button-link">Dashboard</a>
                 <a href="{% url 'logout' %}" class="button-link">Log Out</a>
             {% endif %}
         </div>

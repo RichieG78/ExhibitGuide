@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Profile</title>
+    <style>
+        :root {
+            --bg: #f6f2ea;
+            --surface: #fffaf3;
+            --ink: #201912;
+            --muted: #6f6253;
+            --border: #d8c8b0;
+            --accent: #8b5e34;
+            --accent-strong: #6f4926;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--ink);
+            background: linear-gradient(180deg, #fcf8f1 0%, var(--bg) 100%);
+            padding: 24px 16px 44px;
+        }
+
+        .shell {
+            max-width: 860px;
+            margin: 0 auto;
+            display: grid;
+            gap: 18px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 8px 22px rgba(55, 38, 20, 0.06);
+        }
+
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.8rem, 3vw, 2.4rem);
+        }
+
+        .muted {
+            color: var(--muted);
+            margin: 6px 0 0;
+        }
+
+        .button-link,
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 10px 14px;
+            background: var(--accent);
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+            font: inherit;
+            transition: background-color 140ms ease, transform 140ms ease;
+        }
+
+        .button-link:hover,
+        .button-link:focus-visible,
+        button:hover,
+        button:focus-visible {
+            background: var(--accent-strong);
+            transform: translateY(-1px);
+        }
+
+        form p {
+            margin: 0 0 10px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        textarea {
+            width: 100%;
+            margin-top: 4px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font: inherit;
+            background: #fff;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .messages {
+            display: grid;
+            gap: 8px;
+        }
+
+        .alert {
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+        }
+
+        .alert-success { background: #eef7ef; border-color: #b5d8b9; color: #1f5a28; }
+        .alert-error, .alert-danger { background: #fcefed; border-color: #e1b3ad; color: #7a1f1f; }
+        .alert-warning { background: #fff7e8; border-color: #e8c999; color: #7a4d15; }
+        .alert-info { background: #edf5fb; border-color: #b4d0e8; color: #1e4e76; }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <section class="card header">
+            <div>
+                <h1>Your Profile</h1>
+                <p class="muted">Update the details used for exhibit inquiries and prospect records.</p>
+            </div>
+            <div>
+                <a href="{% url 'dashboard' %}" class="button-link">Dashboard</a>
+                <a href="{% url 'simulate-scan' %}" class="button-link">Public Exhibit</a>
+                <a href="{% url 'logout' %}" class="button-link">Log Out</a>
+            </div>
+        </section>
+
+        {% if messages %}
+            <section class="messages" aria-live="polite">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </section>
+        {% endif %}
+
+        <section class="card">
+            <form method="post">
+                {% csrf_token %}
+                <h2 style="margin: 0 0 10px; color: var(--muted);">Account Information</h2>
+                <p class="muted" style="margin: 0 0 12px;">Inherited from your login account.</p>
+                {{ account_form.as_p }}
+
+                <h2 style="margin: 16px 0 10px; color: var(--muted);">Profile Details</h2>
+                {{ profile_form.as_p }}
+                <button type="submit">Save Profile</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

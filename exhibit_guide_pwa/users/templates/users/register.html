@@ -6,12 +6,15 @@
     <h2>Register your Interest</h2>
     <form method="post">
       {% csrf_token %}
+      {% if interest_exhibit_id %}
+      <input type="hidden" name="interest_exhibit" value="{{ interest_exhibit_id }}">
+      {% endif %}
       {{ form|crispy }}
       <button type="submit" class="btn btn-primary">Express Interest</button>
     </form>
      <div class="border-top pt-3"></div>
         <small class="text-muted">
-          Already have an account? <a class="ml-2" href="{% url 'login' %}">Sign In</a>
+          Already have an account? <a class="ml-2" href="{% url 'login' %}{% if interest_exhibit_id %}?interest_exhibit={{ interest_exhibit_id }}{% endif %}">Sign In</a>
         </small>
     </div>
   </div>
