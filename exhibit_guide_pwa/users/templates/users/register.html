@@ -1,0 +1,18 @@
+{% extends "blog/base.html" %}
+{% block content %}
+
+  <div class="container">
+    <h2>Register your Interest</h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Express Interest</button>
+    </form>
+     <div class="border-top pt-3"></div>
+        <small class="text-muted">
+            Already have an account? <a class="ml-2" href="#">Sign In</a>
+        </small>
+    </div>
+  </div>
+  
+{% endblock content %}

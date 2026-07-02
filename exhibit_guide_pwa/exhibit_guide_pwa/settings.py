@@ -41,6 +41,7 @@ ALLOWED_HOSTS = _csv_env(
 
 INSTALLED_APPS = [
     'exhibits.apps.ExhibitsConfig',
+    'users.apps.UsersConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
