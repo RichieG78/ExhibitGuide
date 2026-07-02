@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Exhibit, Prospect
+from .models import Exhibit
+from users.models import Prospect
 
 
 class ProspectInline(admin.TabularInline):

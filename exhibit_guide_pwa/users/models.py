@@ -1,4 +1,5 @@
 from django.db import models
+from exhibits.models import Exhibit
 
 # Create your models here.
 
