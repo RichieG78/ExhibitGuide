@@ -42,6 +42,8 @@ ALLOWED_HOSTS = _csv_env(
 INSTALLED_APPS = [
     'exhibits.apps.ExhibitsConfig',
     'users.apps.UsersConfig',
+    "crispy_forms", #Updated here
+    "crispy_bootstrap5", #Updated here
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -138,3 +140,5 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CRISPY_TEMPLATE_PACK = 'bootstrap5'

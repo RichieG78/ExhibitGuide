@@ -1,16 +1,17 @@
 {% extends "exhibits/base.html" %}
+{% load crispy_forms_tags %} <!-- Updated here to load crispy forms -->
 {% block content %}
 
   <div class="container">
     <h2>Register your Interest</h2>
     <form method="post">
       {% csrf_token %}
-      {{ form.as_p }}
+      {{ form|crispy }}
       <button type="submit" class="btn btn-primary">Express Interest</button>
     </form>
      <div class="border-top pt-3"></div>
         <small class="text-muted">
-            Already have an account? <a class="ml-2" href="#">Sign In</a>
+          Already have an account? <a class="ml-2" href="{% url 'login' %}">Sign In</a>
         </small>
     </div>
   </div>
