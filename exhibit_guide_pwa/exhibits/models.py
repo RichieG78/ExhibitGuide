@@ -25,9 +25,9 @@ class Exhibit(models.Model):
     full_text = models.TextField()
     audio_url = models.URLField()
     video_url = models.URLField()
-    image = models.ImageField(upload_to='exhibit_images/', null=True, blank=True)
+    image = models.ImageField(default='exhibit_images/default.jpg', upload_to='exhibit_images/', null=True, blank=True)
     image_url = models.URLField()
-    qr_identifier = models.PositiveIntegerField(db_index=True, help_text='Printed QR code identifier')
+    qr_identifier = models.PositiveIntegerField(unique=True, db_index=True, help_text='Printed QR code identifier')
     publish_date = models.DateTimeField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exhibits')
 

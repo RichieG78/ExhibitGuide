@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from .models import Exhibit
@@ -82,14 +83,57 @@ class ExhibitViewsTests(TestCase):
 	def test_scan_view_uses_scan_template(self):
 		# This test checks the main scan page loads successfully and uses
 		# the expected template.
-		response = self.client.get('/exhibits/')
+		response = self.client.get(reverse('scan'))
 		self.assertEqual(response.status_code, 200)
 		self.assertTemplateUsed(response, 'exhibits/scan.html')
 
-	def test_simulate_scan_view_uses_base_template(self):
-		# This test checks the simulated scan route works and renders
+	def test_exhibit_preview_view_uses_base_template(self):
+		# This test checks a concrete exhibit preview route works and renders
 		# the exhibit preview template.
-		response = self.client.get('/exhibits/simulate-scan/')
+		user = User.objects.create_user(username='preview-user', password='pw123456')
+		exhibit = Exhibit.objects.create(
+			show_name='Spring Collection',
+			artwork='No. 5',
+			artist='Wassily Kandinsky',
+			medium='Oil on canvas',
+			dimensions_height=100,
+			dimensions_width=80,
+			provenance='Demo provenance',
+			price=500000,
+			tldr='Short summary',
+			full_text='Long summary',
+			audio_url='https://example.com/audio',
+			video_url='https://example.com/video',
+			image_url='https://example.com/image',
+			qr_identifier=1003,
+			publish_date=timezone.now(),
+			user=user,
+		)
+		response = self.client.get(reverse('exhibit_preview', args=[exhibit.id]))
+		self.assertEqual(response.status_code, 200)
+		self.assertTemplateUsed(response, 'exhibits/base.html')
+
+	def test_qr_exhibit_preview_route_uses_base_template(self):
+		user = User.objects.create_user(username='qr-preview-user', password='pw123456')
+		exhibit = Exhibit.objects.create(
+			show_name='QR Collection',
+			artwork='Composition VIII',
+			artist='Wassily Kandinsky',
+			medium='Oil on canvas',
+			dimensions_height=140,
+			dimensions_width=201,
+			provenance='Demo provenance',
+			price=700000,
+			tldr='Short summary',
+			full_text='Long summary',
+			audio_url='https://example.com/audio',
+			video_url='https://example.com/video',
+			image_url='https://example.com/image',
+			qr_identifier=1908,
+			publish_date=timezone.now(),
+			user=user,
+		)
+		response = self.client.get(reverse('exhibit_preview_by_qr', args=[exhibit.qr_identifier]))
 		self.assertEqual(response.status_code, 200)
 		self.assertTemplateUsed(response, 'exhibits/base.html')
 

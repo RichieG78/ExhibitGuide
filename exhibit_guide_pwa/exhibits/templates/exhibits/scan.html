@@ -1,45 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan Exhibit</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .scan-card {
-            background-color: #fff;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        .placeholder-image {
-            margin: 1rem 0;
-        }
-        .scan-button {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            background-color: #007BFF;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-        .scan-button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'exhibits/css/exhibits.css' %}">
 </head>
-<body>
+<body class="scan-page">
     <main class="scan-card">
         <h1>Ready to Scan</h1>
         <p>Use this placeholder flow to simulate a visitor scanning an exhibit label.</p>
@@ -49,7 +17,11 @@
                 alt="Placeholder exhibit preview"
             >
         </div>
-        <a class="scan-button" href="{% url 'simulate-scan' %}">Simulate Scan</a>
+        {% if latest_exhibit %}
+            <a class="scan-button" href="{% url 'exhibit_preview_by_qr' latest_exhibit.qr_identifier %}">Simulate Scan</a>
+        {% else %}
+            <span class="scan-button" aria-disabled="true">No exhibits available</span>
+        {% endif %}
     </main>
 </body>
 </html>
