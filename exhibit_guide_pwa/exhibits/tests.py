@@ -37,6 +37,28 @@ class ExhibitModelTests(TestCase):
 		self.assertEqual(exhibit.currency, Exhibit.CurrencyChoices.USD)
 		self.assertEqual(str(exhibit), 'The Starry Night by Vincent van Gogh')
 
+	def test_qr_identifier_is_auto_generated_on_create(self):
+		exhibit = Exhibit.objects.create(
+			show_name='Autogen Collection',
+			artwork='Blue Segment',
+			artist='Test Artist',
+			medium='Oil on board',
+			dimensions_height=60,
+			dimensions_width=40,
+			provenance='Demo provenance',
+			price=125000,
+			tldr='Short summary',
+			full_text='Long summary',
+			audio_url='https://example.com/audio',
+			video_url='https://example.com/video',
+			image_url='https://example.com/image',
+			publish_date=timezone.now(),
+			user=self.user,
+		)
+
+		self.assertIsNotNone(exhibit.qr_identifier)
+		self.assertEqual(exhibit.qr_identifier, exhibit.id + 1000)
+
 
 class ProspectModelTests(TestCase):
 	def setUp(self):

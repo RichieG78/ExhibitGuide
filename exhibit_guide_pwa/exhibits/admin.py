@@ -20,10 +20,10 @@ class ExhibitAdmin(admin.ModelAdmin):
 	search_fields = ('artwork', 'artist', 'show_name', 'gallery_name')
 	ordering = ('-publish_date',)
 	inlines = (ProspectInline,)
-	readonly_fields = ('id', 'public_preview_url')
+	readonly_fields = ('id', 'qr_identifier', 'public_preview_url')
 	fieldsets = (
 		('Core Details', {
-			'fields': ('id', 'public_preview_url', 'gallery_name', 'show_name', 'artwork', 'artist', 'medium')
+			'fields': ('id', 'qr_identifier', 'public_preview_url', 'gallery_name', 'show_name', 'artwork', 'artist', 'medium')
 		}),
 		('Artwork Specifications', {
 			'fields': ('dimensions_height', 'dimensions_width', 'provenance')
@@ -32,11 +32,13 @@ class ExhibitAdmin(admin.ModelAdmin):
 			'fields': ('price', 'currency', 'audio_url', 'video_url', 'image', 'image_url')
 		}),
 		('Publishing', {
-			'fields': ('qr_identifier', 'publish_date', 'user', 'tldr', 'full_text')
+			'fields': ('publish_date', 'user', 'tldr', 'full_text')
 		}),
 	)
 
 	def public_preview_url(self, obj):
+		if not obj or not obj.pk or obj.qr_identifier is None:
+			return 'Available after save'
 		url = reverse('exhibit_preview_by_qr', args=[obj.qr_identifier])
 		return format_html('<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>', url, url)
 

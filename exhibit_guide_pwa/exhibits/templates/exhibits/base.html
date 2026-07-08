@@ -10,6 +10,10 @@
 <body class="exhibit-page">
     {% block content %}
     <main class="exhibit-shell">
+        <header class="top-bar">
+            <p class="gallery-title">{{ featured_exhibit.gallery_name }}</p>
+        </header>
+
         {% if messages %}
             <div class="messages" aria-live="polite">
                 {% for message in messages %}
@@ -20,21 +24,34 @@
             </div>
         {% endif %}
 
-        <p class="eyebrow">{{ featured_exhibit.gallery_name }}{% if featured_exhibit.show_name %} · {{ featured_exhibit.show_name }}{% endif %}</p>
-        <h1>{{ featured_exhibit.artwork }}</h1>
-        <h2>{{ featured_exhibit.artist }}</h2>
-
         <div class="hero-art">
             <img
                 src="{% if featured_exhibit.image %}{{ featured_exhibit.image.url }}{% else %}{{ featured_exhibit.image_url }}{% endif %}"
                 alt="{{ featured_exhibit.artwork }} by {{ featured_exhibit.artist }}"
             >
+            <div class="hero-overlay">
+                <p class="eyebrow">{{ featured_exhibit.artist }}</p>
+                <h1>{{ featured_exhibit.artwork }}</h1>
+                <h2>{{ featured_exhibit.medium }} · {{ featured_exhibit.dimensions_height }} x {{ featured_exhibit.dimensions_width }} cm · {{ featured_exhibit.publish_date|date:"Y" }}</h2>
+            </div>
         </div>
 
         <div class="actions">
-            <button type="button">Listen</button>
-            <button type="button" id="read-button" aria-controls="reading-panel" aria-expanded="false">Read</button>
-            <button type="button" id="view-button" aria-controls="view-panel" aria-expanded="false">View</button>
+            <button type="button" id="listen-button" aria-controls="listen-panel" aria-expanded="false">
+                <span class="action-icon action-icon-listen" aria-hidden="true"></span>
+                <span class="action-label">Listen</span>
+            </button>
+            <button type="button" id="read-button" aria-controls="reading-panel" aria-expanded="false">
+                <span class="action-icon action-icon-read" aria-hidden="true"></span>
+                <span class="action-label">Read</span>
+            </button>
+            <button type="button" id="view-button" aria-controls="view-panel" aria-expanded="false">
+                <span class="action-icon action-icon-watch" aria-hidden="true"></span>
+                <span class="action-label">Watch</span>
+            </button>
+        </div>
+
+        <div class="secondary-actions">
             {% if not user.is_authenticated %}
                 <a href="{% url 'register' %}?interest_exhibit={{ featured_exhibit.id }}" class="button-link">Express Interest</a>
             {% endif %}
@@ -44,7 +61,7 @@
             {% endif %}
         </div>
 
-        <section id="reading-panel" class="reading-panel" aria-live="polite">
+        <section id="reading-panel" class="reading-panel card-panel" aria-live="polite">
             {% if featured_exhibit.tldr %}
                 <p><strong>TL;DR:</strong> {{ featured_exhibit.tldr }}</p>
             {% endif %}
@@ -60,7 +77,7 @@
                 <dd>{{ featured_exhibit.currency }} {{ featured_exhibit.price }}</dd>
             </dl>
         </section>
-        <section id="view-panel" class="view-panel" aria-live="polite">
+        <section id="view-panel" class="view-panel card-panel" aria-live="polite">
             {% if featured_exhibit.video_url %}
                 <iframe
                     class="video-frame"
@@ -75,8 +92,22 @@
                 <p>Video is not available for this exhibit yet.</p>
             {% endif %}
         </section>
-        <section id="listen-panel" class="listen-panel" aria-live="polite">
+        <section id="listen-panel" class="listen-panel card-panel" aria-live="polite">
             {% if featured_exhibit.audio_url %}
+                <div class="audio-intro">
+                    <div class="audio-row">
+                        <span class="audio-play" aria-hidden="true"></span>
+                        <div class="audio-wave" aria-hidden="true"></div>
+                    </div>
+                    <div class="audio-time-row">
+                        <span>0:00</span>
+                        <span>4:12</span>
+                    </div>
+                    <p class="audio-heading">Artist's statement - audio</p>
+                    {% if featured_exhibit.tldr %}
+                        <p class="audio-summary">{{ featured_exhibit.tldr }}</p>
+                    {% endif %}
+                </div>
                 <audio class="audio-frame" controls preload="none">
                     <source src="{{ featured_exhibit.audio_url }}">
                     Your browser does not support the audio player.
@@ -93,7 +124,7 @@
         const readingPanel = document.getElementById('reading-panel');
         const viewButton = document.getElementById('view-button');
         const viewPanel = document.getElementById('view-panel');
-        const listenButton = document.querySelector('.actions button:first-child');
+        const listenButton = document.getElementById('listen-button');
         const listenPanel = document.getElementById('listen-panel');
 
         readButton.addEventListener('click', () => {

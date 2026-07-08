@@ -27,12 +27,29 @@ class Exhibit(models.Model):
     video_url = models.URLField()
     image = models.ImageField(default='exhibit_images/default.jpg', upload_to='exhibit_images/', null=True, blank=True)
     image_url = models.URLField()
-    qr_identifier = models.PositiveIntegerField(unique=True, db_index=True, help_text='Printed QR code identifier')
+    qr_identifier = models.PositiveIntegerField(
+        unique=True,
+        db_index=True,
+        null=True,
+        blank=True,
+        editable=False,
+        help_text='Printed QR code identifier',
+    )
     publish_date = models.DateTimeField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exhibits')
 
     class Meta:
         db_table = 'exhibits'
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        if self.qr_identifier is None and self.id is not None:
+            generated_qr_identifier = self.id + 1000
+            type(self).objects.filter(pk=self.pk, qr_identifier__isnull=True).update(
+                qr_identifier=generated_qr_identifier
+            )
+            self.qr_identifier = generated_qr_identifier
 
     def __str__(self):
         return f'{self.artwork} by {self.artist}'
