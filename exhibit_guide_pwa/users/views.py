@@ -7,7 +7,7 @@ from django.shortcuts import redirect, render
 from exhibits.models import Exhibit
 
 from .forms import GalleryInquiryForm, SavedCollectionForm, UserAccountForm, UserProfileForm, UserRegisterForm
-from .models import Prospect, SavedCollection, SavedExhibit, UserProfile
+from .models import GalleryInquiry, Prospect, SavedCollection, SavedExhibit, UserProfile
 
 
 # Create your views here.
@@ -108,13 +108,23 @@ def profile(request):
 def dashboard(request):
     profile = UserProfile.objects.filter(user=request.user).first()
     collections = SavedCollection.objects.filter(user=request.user).prefetch_related('exhibits').order_by('-created_at')
+    saved_exhibits = SavedExhibit.objects.filter(user=request.user).select_related('exhibit').order_by('-saved_at')
+    saved_exhibit_ids = set(saved_exhibits.values_list('exhibit_id', flat=True))
 
     featured_interest_exhibit = None
-    interest_exhibit_id = request.GET.get('interest_exhibit') or request.session.get('interest_exhibit_id')
+    scanned_exhibit = None
+    interest_exhibit_from_query = request.GET.get('interest_exhibit')
+    if interest_exhibit_from_query:
+        request.session['interest_exhibit_id'] = str(interest_exhibit_from_query)
+    interest_exhibit_id = interest_exhibit_from_query or request.session.get('interest_exhibit_id')
     if interest_exhibit_id:
         featured_interest_exhibit = Exhibit.objects.filter(id=interest_exhibit_id).first()
+
+    if featured_interest_exhibit and featured_interest_exhibit.id not in saved_exhibit_ids:
+        scanned_exhibit = featured_interest_exhibit
+
     if not featured_interest_exhibit:
-        saved_item = SavedExhibit.objects.filter(user=request.user).select_related('exhibit').order_by('-saved_at').first()
+        saved_item = saved_exhibits.first()
         if saved_item:
             featured_interest_exhibit = saved_item.exhibit
 
@@ -127,7 +137,7 @@ def dashboard(request):
                 exhibit = Exhibit.objects.filter(id=exhibit_id).first()
                 if exhibit:
                     SavedExhibit.objects.get_or_create(user=request.user, exhibit=exhibit)
-                    messages.success(request, f'{exhibit.artwork} saved to your paintings.')
+                    messages.success(request, f'{exhibit.artwork} added to your watchlist.')
                 else:
                     messages.error(request, 'Exhibit not found.')
             return redirect('dashboard')
@@ -201,16 +211,17 @@ def dashboard(request):
                     return redirect('dashboard')
     collection_form = SavedCollectionForm()
     inquiry_form = GalleryInquiryForm(initial={'exhibit': featured_interest_exhibit} if featured_interest_exhibit else None)
-
-    saved_exhibits = SavedExhibit.objects.filter(user=request.user).select_related('exhibit').order_by('-saved_at')
-    exhibits = Exhibit.objects.order_by('-publish_date')[:12]
+    enquired_exhibit_ids = set(
+        GalleryInquiry.objects.filter(user=request.user).values_list('exhibit_id', flat=True)
+    )
 
     context = {
         'collection_form': collection_form,
         'inquiry_form': inquiry_form,
         'saved_exhibits': saved_exhibits,
+        'scanned_exhibit': scanned_exhibit,
+        'enquired_exhibit_ids': enquired_exhibit_ids,
         'collections': collections,
-        'exhibits': exhibits,
         'featured_interest_exhibit': featured_interest_exhibit,
     }
     return render(request, 'users/dashboard.html', context)

@@ -56,7 +56,7 @@
                 <a href="{% url 'register' %}?interest_exhibit={{ featured_exhibit.id }}" class="button-link">Express Interest</a>
             {% endif %}
             {% if user.is_authenticated %}
-                <a href="{% url 'dashboard' %}" class="button-link">Dashboard</a>
+                <a href="{% url 'dashboard' %}?interest_exhibit={{ featured_exhibit.id }}" class="button-link">Dashboard</a>
                 <a href="{% url 'logout' %}" class="button-link">Log Out</a>
             {% endif %}
         </div>
