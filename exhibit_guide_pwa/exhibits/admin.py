@@ -9,7 +9,7 @@ from users.models import Prospect
 class ProspectInline(admin.TabularInline):
 	model = Prospect
 	extra = 0
-	fields = ('firstname', 'lastname', 'email', 'phone', 'dwell_time')
+	fields = ('name', 'email', 'phone', 'dwell_time', 'call_back_request')
 	show_change_link = True
 
 
@@ -17,16 +17,13 @@ class ProspectInline(admin.TabularInline):
 class ExhibitAdmin(admin.ModelAdmin):
 	list_display = ('artwork', 'artist', 'show_name', 'currency', 'price', 'qr_identifier', 'public_preview_url', 'publish_date')
 	list_filter = ('gallery_name', 'currency', 'publish_date')
-	search_fields = ('artwork', 'artist', 'show_name', 'gallery_name')
+	search_fields = ('artwork__title', 'artwork__artist__firstname', 'artwork__artist__lastname', 'show__show_name', 'gallery_name')
 	ordering = ('-publish_date',)
 	inlines = (ProspectInline,)
 	readonly_fields = ('id', 'qr_identifier', 'public_preview_url')
 	fieldsets = (
 		('Core Details', {
-			'fields': ('id', 'qr_identifier', 'public_preview_url', 'gallery_name', 'show_name', 'artwork', 'artist', 'medium')
-		}),
-		('Artwork Specifications', {
-			'fields': ('dimensions_height', 'dimensions_width', 'provenance')
+			'fields': ('id', 'qr_identifier', 'public_preview_url', 'gallery_name', 'show', 'artwork')
 		}),
 		('Commerce and Delivery', {
 			'fields': ('price', 'currency', 'audio_url', 'video_url', 'image', 'image_url')
@@ -47,7 +44,7 @@ class ExhibitAdmin(admin.ModelAdmin):
 
 @admin.register(Prospect)
 class ProspectAdmin(admin.ModelAdmin):
-	list_display = ('firstname', 'lastname', 'email', 'exhibit', 'saved_at', 'dwell_time')
+	list_display = ('name', 'email', 'exhibit', 'saved_at', 'dwell_time', 'call_back_request')
 	list_filter = ('saved_at', 'exhibit')
-	search_fields = ('firstname', 'lastname', 'email', 'phone', 'exhibit__artwork')
+	search_fields = ('name', 'email', 'phone', 'exhibit__artwork__title')
 	ordering = ('-saved_at',)

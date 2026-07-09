@@ -185,17 +185,17 @@ def dashboard(request):
                         exhibit=inquiry.exhibit,
                         email=request.user.email,
                         defaults={
-                            'firstname': profile.firstname if profile else '',
-                            'lastname': profile.lastname if profile else '',
+                            'name': f"{profile.firstname if profile else ''} {profile.lastname if profile else ''}".strip(),
                             'phone': profile.phone if profile else '',
                             'dwell_time': 0,
+                            'call_back_request': True,
                         },
                     )
                     if not created:
-                        prospect.firstname = profile.firstname if profile else prospect.firstname
-                        prospect.lastname = profile.lastname if profile else prospect.lastname
+                        prospect.name = f"{profile.firstname if profile else ''} {profile.lastname if profile else ''}".strip() or prospect.name
                         prospect.phone = profile.phone if profile else prospect.phone
-                        prospect.save(update_fields=['firstname', 'lastname', 'phone'])
+                        prospect.call_back_request = True
+                        prospect.save(update_fields=['name', 'phone', 'call_back_request'])
 
                     messages.success(request, 'Inquiry sent to the gallery owner.')
                     return redirect('dashboard')

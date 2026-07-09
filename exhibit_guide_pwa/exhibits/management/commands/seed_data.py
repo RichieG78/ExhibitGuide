@@ -9,7 +9,7 @@ Usage:
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.utils import timezone
-from exhibits.models import Exhibit
+from exhibits.models import Artist, Artwork, Exhibit, Show
 import datetime
 
 
@@ -476,10 +476,51 @@ class Command(BaseCommand):
 
         created_count = 0
         for data in SEED_EXHIBITS:
+            artist_name = data['artist'].strip()
+            name_parts = artist_name.split(' ', 1)
+            artist_firstname = name_parts[0]
+            artist_lastname = name_parts[1] if len(name_parts) > 1 else ''
+            artist, _ = Artist.objects.get_or_create(
+                firstname=artist_firstname,
+                lastname=artist_lastname,
+                defaults={'nationality': ''},
+            )
+
+            show, _ = Show.objects.get_or_create(
+                show_name=data['show_name'],
+                defaults={
+                    'start_date': data['publish_date'].date(),
+                    'end_date': data['publish_date'].date(),
+                },
+            )
+
+            artwork, _ = Artwork.objects.get_or_create(
+                title=data['artwork'],
+                artist=artist,
+                defaults={
+                    'medium': data['medium'],
+                    'dimensions_height': data['dimensions_height'],
+                    'dimensions_width': data['dimensions_width'],
+                    'provenance': data['provenance'],
+                },
+            )
+
             exhibit, created = Exhibit.objects.get_or_create(
-                artwork=data["artwork"],
-                artist=data["artist"],
-                defaults={**data, "user": user},
+                artwork=artwork,
+                show=show,
+                defaults={
+                    'gallery_name': 'Hargreaves Fine Art',
+                    'price': data['price'],
+                    'currency': data['currency'],
+                    'tldr': data['tldr'],
+                    'full_text': data['full_text'],
+                    'audio_url': data['audio_url'],
+                    'video_url': data['video_url'],
+                    'image_url': data['image_url'],
+                    'qr_identifier': data['qr_identifier'],
+                    'publish_date': data['publish_date'],
+                    'user': user,
+                },
             )
             if created:
                 created_count += 1
