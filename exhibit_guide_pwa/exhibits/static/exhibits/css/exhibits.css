@@ -282,6 +282,15 @@ h2 {
     font-size: 0.84rem;
     font-weight: 600;
     text-decoration: none;
+    transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.secondary-actions .button-link:not(.auth-button-link) {
+    border: 2px solid #8c673e;
+    background: #8c673e;
+    color: #fff7ea;
+    font-weight: 700;
+    box-shadow: 0 6px 12px rgba(140, 103, 62, 0.28);
 }
 
 .secondary-actions .auth-button-link {
@@ -295,6 +304,14 @@ h2 {
     border-color: #ccb38f;
     background: #fff8eb;
     color: #4d433a;
+}
+
+.secondary-actions .button-link:not(.auth-button-link):hover,
+.secondary-actions .button-link:not(.auth-button-link):focus-visible {
+    border-color: #734f2a;
+    background: #734f2a;
+    color: #fff7ea;
+    box-shadow: 0 8px 16px rgba(115, 79, 42, 0.34);
 }
 
 .secondary-actions .auth-button-link:hover,
