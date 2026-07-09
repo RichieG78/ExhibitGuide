@@ -84,15 +84,18 @@ def profile(request):
 
     if request.method == 'POST':
         account_form = UserAccountForm(request.POST, instance=request.user)
-        profile_form = UserProfileForm(request.POST, instance=profile_obj)
+        profile_form = UserProfileForm(request.POST, request.FILES, instance=profile_obj)
         if account_form.is_valid() and profile_form.is_valid():
             account_form.save()
             profile_form.save()
-            messages.success(request, 'Profile updated from your account information.')
+            messages.success(request, 'Profile updated successfully.')
             return redirect('profile')
     else:
         account_form = UserAccountForm(instance=request.user)
         profile_form = UserProfileForm(instance=profile_obj)
+
+    profile_image_url = profile_obj.image.url if profile_obj.image else None
+    display_name = request.user.get_full_name().strip() or request.user.username
 
     return render(
         request,
@@ -100,6 +103,9 @@ def profile(request):
         {
             'account_form': account_form,
             'profile_form': profile_form,
+            'profile_obj': profile_obj,
+            'profile_image_url': profile_image_url,
+            'display_name': display_name,
         },
     )
 

@@ -15,19 +15,20 @@ class UserRegisterForm(UserCreationForm):
 
 
 class UserAccountForm(forms.ModelForm):
+    email = forms.EmailField()
+
     class Meta:
         model = User
         fields = ['username', 'email']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['username'].disabled = True
 
 
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['firstname', 'lastname', 'phone', 'bio']
+        fields = ['image', 'firstname', 'lastname', 'phone', 'bio']
+        widgets = {
+            'bio': forms.Textarea(attrs={'rows': 4}),
+        }
 
 
 class SavedCollectionForm(forms.ModelForm):
@@ -46,3 +47,4 @@ class GalleryInquiryForm(forms.ModelForm):
     class Meta:
         model = GalleryInquiry
         fields = ['exhibit', 'message']
+

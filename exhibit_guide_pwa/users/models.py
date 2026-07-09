@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from PIL import Image
 from exhibits.models import Exhibit
 
 # Create your models here.
@@ -35,6 +36,7 @@ class UserProfile(models.Model):
     """Extended details for a signed-in user."""
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    image = models.ImageField(upload_to='profile_pics', blank=True)
     firstname = models.CharField(max_length=150, blank=True)
     lastname = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=30, blank=True)
@@ -42,6 +44,17 @@ class UserProfile(models.Model):
 
     class Meta:
         db_table = 'user_profiles'
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        if not self.image:
+            return
+
+        image_file = Image.open(self.image.path)
+        if image_file.height > 600 or image_file.width > 600:
+            image_file.thumbnail((600, 600))
+            image_file.save(self.image.path)
 
     def __str__(self):
         return f'Profile for {self.user.username}'
