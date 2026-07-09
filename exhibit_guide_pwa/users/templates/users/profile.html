@@ -9,6 +9,7 @@
 </head>
 <body class="profile-page">
     <main class="profile-shell">
+        {# Mobile header matches the rest of the signed-in collector area. #}
         <header class="top-nav">
             <a href="{% url 'dashboard' %}" class="icon-link" aria-label="Back to dashboard">&#8592;</a>
             <h1>Profile</h1>
@@ -23,6 +24,7 @@
             </section>
         {% endif %}
 
+        {# Hero block summarises who the collector is and shows their current avatar. #}
         <section class="profile-hero card-panel">
             <div class="profile-hero-copy">
                 <p class="eyebrow">Collector Profile</p>
@@ -42,6 +44,7 @@
             </div>
         </section>
 
+        {# The form is split into account details and collector-specific profile details. #}
         <section class="card-panel profile-form-panel">
             <form method="post" enctype="multipart/form-data" class="profile-form">
                 {% csrf_token %}

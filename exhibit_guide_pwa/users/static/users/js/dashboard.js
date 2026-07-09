@@ -1,3 +1,6 @@
+// This script powers the dashboard filter pills.
+// It hides and shows cards on the page instead of doing a full page reload.
+
 const filterButtons = document.querySelectorAll('.filter-pill');
 const cards = document.querySelectorAll('.artwork-card');
 const emptyState = document.querySelector('[data-filter-empty]');
@@ -11,6 +14,7 @@ const emptyMessages = {
 };
 
 function applyFilter(filterValue) {
+    // Count visible cards so we can show a friendly empty-state message when needed.
     let visibleCount = 0;
 
     cards.forEach((card) => {
@@ -31,6 +35,7 @@ function applyFilter(filterValue) {
 
 filterButtons.forEach((button) => {
     button.addEventListener('click', () => {
+        // Only one pill should look active at a time.
         filterButtons.forEach((item) => item.classList.remove('is-active'));
         button.classList.add('is-active');
         applyFilter(button.getAttribute('data-filter') || 'all');
@@ -39,4 +44,6 @@ filterButtons.forEach((button) => {
 
 const activeButton = document.querySelector('.filter-pill.is-active');
 const initialFilter = (activeButton && activeButton.getAttribute('data-filter')) || 'scanned';
+
+// Sync the first rendered screen with whichever pill the template marked as active.
 applyFilter(initialFilter);

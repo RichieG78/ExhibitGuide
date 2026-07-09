@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
+    /* Shared tokens for the profile page so it stays visually aligned with the dashboard. */
     --bg: #1a1814;
     --panel: #201d18;
     --panel-strong: #171410;
@@ -26,6 +27,7 @@ body.profile-page {
 }
 
 .profile-shell {
+    /* Mobile-first frame for the account area. */
     width: min(100%, 430px);
     margin: 0 auto;
     min-height: 100vh;
@@ -104,6 +106,7 @@ body.profile-page {
 }
 
 .profile-hero {
+    /* Summary block that introduces the collector and current profile image. */
     padding: 20px 18px;
     display: grid;
     gap: 18px;
@@ -177,6 +180,7 @@ body.profile-page {
 }
 
 .profile-form {
+    /* Main form layout for account-level and collector-level settings. */
     display: grid;
     gap: 24px;
 }

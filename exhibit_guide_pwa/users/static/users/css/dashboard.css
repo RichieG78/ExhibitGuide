@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
+    /* Shared visual tokens for the signed-in dashboard experience. */
     --bg: #1a1814;
     --panel: #201d18;
     --ink: #e8dfc8;
@@ -24,6 +25,7 @@ body.dashboard-page {
 }
 
 .dashboard-shell {
+    /* Narrow mobile-first frame that keeps the dashboard focused and app-like. */
     width: min(100%, 430px);
     margin: 0 auto;
     min-height: 100vh;
@@ -116,6 +118,7 @@ body.dashboard-page {
 }
 
 .filter-row {
+    /* Horizontal filter pills let the user switch between dashboard states quickly. */
     display: flex;
     gap: 9px;
     overflow-x: auto;
@@ -148,6 +151,7 @@ body.dashboard-page {
 }
 
 .collection-feed {
+    /* Feed of scanned and saved works shown on the dashboard. */
     display: grid;
     gap: 26px;
 }

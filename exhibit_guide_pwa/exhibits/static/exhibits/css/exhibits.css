@@ -1,4 +1,5 @@
 :root {
+    /* Shared colors and spacing used across the public exhibit experience. */
     --page: #f6f4ef;
     --stone-50: #faf9f6;
     --stone-100: #f0ede6;
@@ -44,11 +45,12 @@ body.exhibit-page {
 }
 
 .top-bar {
+    /* Sticky header keeps the gallery name visible while the visitor scrolls. */
     position: sticky;
     top: 0;
     z-index: 8;
     margin: 0 -14px;
-    padding: 12px 16px 13px;
+    padding: 16px 18px 17px;
     background: rgba(250, 249, 246, 0.92);
     backdrop-filter: blur(4px);
     border-bottom: 1px solid rgba(231, 229, 228, 0.72);
@@ -59,8 +61,10 @@ body.exhibit-page {
     margin: 0;
     color: #2d2723;
     font-family: "DM Serif Display", Georgia, serif;
-    font-size: 1.2rem;
-    letter-spacing: 0.015em;
+    font-size: clamp(1.75rem, 6vw, 2.2rem);
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-wrap: balance;
 }
 
 .messages {
@@ -106,6 +110,7 @@ body.exhibit-page {
 }
 
 .hero-art {
+    /* Large artwork presentation area at the top of the exhibit page. */
     position: relative;
     margin: 0 -14px;
     min-height: 470px;
@@ -164,6 +169,7 @@ h2 {
 }
 
 .actions {
+    /* Tab buttons for switching between reading, audio, and video content. */
     position: sticky;
     bottom: 10px;
     z-index: 7;
@@ -240,7 +246,7 @@ h2 {
     border-radius: 1px;
 }
 
-.actions button:first-child {
+.actions button.is-active {
     background: var(--white);
     color: #28231f;
     box-shadow: var(--shadow-sm);
@@ -264,6 +270,7 @@ h2 {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    justify-content: flex-end;
 }
 
 .secondary-actions .button-link {
@@ -277,6 +284,12 @@ h2 {
     text-decoration: none;
 }
 
+.secondary-actions .auth-button-link {
+    border-color: #8c673e;
+    background: #2e2721;
+    color: #f8eddc;
+}
+
 .secondary-actions .button-link:hover,
 .secondary-actions .button-link:focus-visible {
     border-color: #ccb38f;
@@ -284,7 +297,15 @@ h2 {
     color: #4d433a;
 }
 
+.secondary-actions .auth-button-link:hover,
+.secondary-actions .auth-button-link:focus-visible {
+    border-color: #c4935a;
+    background: #4a3723;
+    color: #fff7ea;
+}
+
 .card-panel {
+    /* Base card style shared by Read, Listen, and Watch content panels. */
     display: none;
     margin-top: 12px;
     padding: 19px 16px;
@@ -303,21 +324,63 @@ h2 {
     display: block;
 }
 
-.details {
-    margin: 12px 0 0;
+.detail-stack {
     display: grid;
-    grid-template-columns: 98px 1fr;
-    gap: 8px 10px;
-    font-size: 0.9rem;
+    gap: 10px;
 }
 
-.details dt {
-    color: var(--stone-500);
-    font-weight: 600;
+.detail-card {
+    padding: 13px 14px;
+    border: 1px solid var(--stone-200);
+    border-radius: 12px;
+    background: #faf7f1;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-.details dd {
+.detail-card h3 {
     margin: 0;
+    color: var(--stone-500);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.detail-card p {
+    margin: 7px 0 0;
+    color: #2f2925;
+    font-size: 0.96rem;
+    line-height: 1.5;
+}
+
+.detail-card-summary p {
+    margin-top: 0;
+    font-size: 0.98rem;
+}
+
+.panel-summary-card {
+    margin-bottom: 12px;
+}
+
+.reading-copy-card {
+    margin-top: 16px;
+    padding: 16px 14px;
+    border: 1px solid var(--stone-200);
+    border-radius: 12px;
+    background: var(--white);
+}
+
+.reading-copy-card h3 {
+    margin: 0;
+    color: var(--stone-500);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.reading-copy-card p {
+    margin: 10px 0 0;
 }
 
 .video-frame {
@@ -396,13 +459,6 @@ h2 {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-}
-
-.audio-summary {
-    margin: 0;
-    color: #6f665d;
-    font-size: 0.94rem;
-    line-height: 1.5;
 }
 
 .media-link {

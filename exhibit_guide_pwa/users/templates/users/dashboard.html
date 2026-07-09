@@ -9,6 +9,7 @@
 </head>
 <body class="dashboard-page">
     <main class="dashboard-shell">
+        {# Top navigation keeps scan and profile access close at hand on mobile. #}
         <header class="top-nav">
             <a href="{% url 'scan' %}" class="icon-link" aria-label="Back to public exhibit">&#8592;</a>
             <h1>Saved Exhibits</h1>
@@ -23,12 +24,14 @@
             </section>
         {% endif %}
 
+        {# Short welcome copy personalises the dashboard for the signed-in collector. #}
         <section class="greeting-section">
             <p class="welcome">Welcome Back</p>
             <p class="collector-name">{{ user.get_full_name|default:user.username }}</p>
             <p class="collector-sub">Pieces you've expressed interest in</p>
         </section>
 
+        {# Filter pills switch between dashboard states without a page reload. #}
         <section class="filter-row" aria-label="Artwork filters">
             <button type="button" class="filter-pill" data-filter="all">All</button>
             <button type="button" class="filter-pill is-active" data-filter="scanned">Scanned</button>
@@ -37,6 +40,7 @@
             <button type="button" class="filter-pill" data-filter="acquired">Acquired</button>
         </section>
 
+        {# The feed mixes the current scanned work with saved watchlist items. #}
         <section class="collection-feed">
             {% if scanned_exhibit %}
                 <article class="artwork-card" data-status="scanned">
@@ -121,10 +125,12 @@
             {% endif %}
         </section>
 
+        {# Floating contact action gives the user a quick way to reach the gallery. #}
         <div class="floating-cta-wrap">
             <a href="#contact-gallery" class="contact-cta">Contact Gallery</a>
         </div>
 
+        {# Inquiry form reuses the backend gallery inquiry flow from the dashboard page. #}
         <section id="contact-gallery" class="inquiry-sheet">
             <h3>Contact Gallery Owner</h3>
             <form method="post">

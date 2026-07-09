@@ -9,6 +9,7 @@
 </head>
 <body class="scan-page">
     <main class="scan-card">
+        {# This page is a lightweight stand-in for a real QR scan entry point. #}
         <h1>Ready to Scan</h1>
         <p>Use this placeholder flow to simulate a visitor scanning an exhibit label.</p>
         <div class="placeholder-image">
@@ -18,6 +19,7 @@
             >
         </div>
         {% if latest_exhibit %}
+            {# In development, the newest exhibit acts as the scan target. #}
             <a class="scan-button" href="{% url 'exhibit_preview_by_qr' latest_exhibit.qr_identifier %}">Simulate Scan</a>
         {% else %}
             <span class="scan-button" aria-disabled="true">No exhibits available</span>

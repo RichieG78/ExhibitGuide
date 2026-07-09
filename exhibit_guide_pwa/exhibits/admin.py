@@ -1,3 +1,5 @@
+"""Admin configuration for exhibits and inbound prospect records."""
+
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
@@ -7,6 +9,7 @@ from users.models import Prospect
 
 
 class ProspectInline(admin.TabularInline):
+	"""Show related prospect records directly on the exhibit admin page."""
 	model = Prospect
 	extra = 0
 	fields = ('name', 'email', 'phone', 'dwell_time', 'call_back_request')
@@ -15,6 +18,7 @@ class ProspectInline(admin.TabularInline):
 
 @admin.register(Exhibit)
 class ExhibitAdmin(admin.ModelAdmin):
+	"""Admin layout for managing the public exhibit experience."""
 	list_display = ('artwork', 'artist', 'show_name', 'currency', 'price', 'qr_identifier', 'public_preview_url', 'publish_date')
 	list_filter = ('gallery_name', 'currency', 'publish_date')
 	search_fields = ('artwork__title', 'artwork__artist__firstname', 'artwork__artist__lastname', 'show__show_name', 'gallery_name')
@@ -34,6 +38,7 @@ class ExhibitAdmin(admin.ModelAdmin):
 	)
 
 	def public_preview_url(self, obj):
+		"""Build the public QR preview link once the exhibit has been saved."""
 		if not obj or not obj.pk or obj.qr_identifier is None:
 			return 'Available after save'
 		url = reverse('exhibit_preview_by_qr', args=[obj.qr_identifier])
@@ -44,6 +49,7 @@ class ExhibitAdmin(admin.ModelAdmin):
 
 @admin.register(Prospect)
 class ProspectAdmin(admin.ModelAdmin):
+	"""Admin table for people who have shown interest in exhibits."""
 	list_display = ('name', 'email', 'exhibit', 'saved_at', 'dwell_time', 'call_back_request')
 	list_filter = ('saved_at', 'exhibit')
 	search_fields = ('name', 'email', 'phone', 'exhibit__artwork__title')

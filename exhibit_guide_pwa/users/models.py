@@ -1,12 +1,16 @@
+"""Data models for signed-in user activity and gallery follow-up.
+
+This app stores the collector profile, saved works, collections, inquiries,
+and prospect records created from user interest.
+"""
+
 from django.db import models
 from django.contrib.auth.models import User
 from PIL import Image
 from exhibits.models import Exhibit
 
-# Create your models here.
-
 class Prospect(models.Model):
-    """Gallery visitor that is interested in an exhibit."""
+    """Represents a person the gallery may want to contact about a work."""
 
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=300)
@@ -22,10 +26,12 @@ class Prospect(models.Model):
 
     @property
     def firstname(self):
+        """Compatibility helper for older code that still expects first name."""
         return self.name.split(' ', 1)[0] if self.name else ''
 
     @property
     def lastname(self):
+        """Compatibility helper for older code that still expects last name."""
         return self.name.split(' ', 1)[1] if self.name and ' ' in self.name else ''
 
     def __str__(self):
@@ -33,7 +39,7 @@ class Prospect(models.Model):
 
 
 class UserProfile(models.Model):
-    """Extended details for a signed-in user."""
+    """Stores extra profile details that Django's default User does not include."""
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     image = models.ImageField(upload_to='profile_pics', blank=True)
@@ -46,6 +52,7 @@ class UserProfile(models.Model):
         db_table = 'user_profiles'
 
     def save(self, *args, **kwargs):
+        """Save the profile and shrink large uploaded images for faster page loads."""
         super().save(*args, **kwargs)
 
         if not self.image:
@@ -53,6 +60,7 @@ class UserProfile(models.Model):
 
         image_file = Image.open(self.image.path)
         if image_file.height > 600 or image_file.width > 600:
+            # Resize in place so uploaded profile pictures stay lightweight.
             image_file.thumbnail((600, 600))
             image_file.save(self.image.path)
 
@@ -61,7 +69,7 @@ class UserProfile(models.Model):
 
 
 class SavedExhibit(models.Model):
-    """A painting/exhibit saved by a user."""
+    """A single exhibit a user has added to their watchlist."""
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_exhibits')
     exhibit = models.ForeignKey(Exhibit, on_delete=models.CASCADE, related_name='saved_by_users')
@@ -76,7 +84,7 @@ class SavedExhibit(models.Model):
 
 
 class SavedCollection(models.Model):
-    """A custom collection of saved exhibits for a user."""
+    """A named group of exhibits curated by the signed-in user."""
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_collections')
     name = models.CharField(max_length=120)
@@ -92,7 +100,7 @@ class SavedCollection(models.Model):
 
 
 class GalleryInquiry(models.Model):
-    """Message from a user to a gallery owner about an exhibit."""
+    """Message a user sends to the gallery about a specific exhibit."""
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='gallery_inquiries')
     exhibit = models.ForeignKey(Exhibit, on_delete=models.CASCADE, related_name='gallery_inquiries')

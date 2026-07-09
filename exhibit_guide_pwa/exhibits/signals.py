@@ -1,3 +1,5 @@
+"""Signals that keep exhibit data in sync after admin saves."""
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -6,7 +8,7 @@ from .models import Exhibit
 
 @receiver(post_save, sender=Exhibit)
 def sync_exhibit_image_url(sender, instance, **kwargs):
-    """Keep image_url aligned with uploaded Exhibit image in admin saves."""
+    """Mirror an uploaded image path into image_url so templates can use one field."""
     if not instance.image:
         return
 

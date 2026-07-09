@@ -1,3 +1,5 @@
+"""Views that drive account access, the collector dashboard, and profile updates."""
+
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
@@ -10,8 +12,9 @@ from .forms import GalleryInquiryForm, SavedCollectionForm, UserAccountForm, Use
 from .models import GalleryInquiry, Prospect, SavedCollection, SavedExhibit, UserProfile
 
 
-# Create your views here.
 def register(request):
+    """Register a user and preserve any scanned exhibit context through the auth flow."""
+    # If the visitor came from an exhibit scan, keep that exhibit id in session.
     interest_exhibit_id = request.GET.get('interest_exhibit') or request.POST.get('interest_exhibit')
     if interest_exhibit_id:
         request.session['interest_exhibit_id'] = str(interest_exhibit_id)
@@ -37,6 +40,7 @@ def register(request):
 
 
 def login(request):
+    """Sign a user in and keep their scanned exhibit context intact."""
     interest_exhibit_id = request.GET.get('interest_exhibit') or request.POST.get('interest_exhibit')
     if interest_exhibit_id:
         request.session['interest_exhibit_id'] = str(interest_exhibit_id)
@@ -62,6 +66,7 @@ def login(request):
 
 
 def logout(request):
+    """Sign the user out and show a simple confirmation page."""
     auth_logout(request)
     messages.info(request, 'You have been logged out.')
     return render(request, 'users/logout.html')
@@ -69,9 +74,10 @@ def logout(request):
 
 @login_required
 def profile(request):
+    """Let the signed-in user update account details and their collector profile."""
     profile_obj, _ = UserProfile.objects.get_or_create(user=request.user)
 
-    # Seed profile fields from auth-user names where available.
+    # Copy names from the auth user model the first time a profile is opened.
     updated = False
     if not profile_obj.firstname and request.user.first_name:
         profile_obj.firstname = request.user.first_name
@@ -83,6 +89,7 @@ def profile(request):
         profile_obj.save(update_fields=['firstname', 'lastname'])
 
     if request.method == 'POST':
+        # Account details and profile details are saved together on one page.
         account_form = UserAccountForm(request.POST, instance=request.user)
         profile_form = UserProfileForm(request.POST, request.FILES, instance=profile_obj)
         if account_form.is_valid() and profile_form.is_valid():
@@ -112,6 +119,7 @@ def profile(request):
 
 @login_required
 def dashboard(request):
+    """Show the signed-in collector dashboard and handle watchlist/inquiry actions."""
     profile = UserProfile.objects.filter(user=request.user).first()
     collections = SavedCollection.objects.filter(user=request.user).prefetch_related('exhibits').order_by('-created_at')
     saved_exhibits = SavedExhibit.objects.filter(user=request.user).select_related('exhibit').order_by('-saved_at')
@@ -119,6 +127,7 @@ def dashboard(request):
 
     featured_interest_exhibit = None
     scanned_exhibit = None
+    # Prefer an exhibit passed in from the scan flow, then fall back to session.
     interest_exhibit_from_query = request.GET.get('interest_exhibit')
     if interest_exhibit_from_query:
         request.session['interest_exhibit_id'] = str(interest_exhibit_from_query)
@@ -127,6 +136,7 @@ def dashboard(request):
         featured_interest_exhibit = Exhibit.objects.filter(id=interest_exhibit_id).first()
 
     if featured_interest_exhibit and featured_interest_exhibit.id not in saved_exhibit_ids:
+        # A scanned exhibit that is not saved yet belongs in the Scanned tab.
         scanned_exhibit = featured_interest_exhibit
 
     if not featured_interest_exhibit:
@@ -138,6 +148,7 @@ def dashboard(request):
         action = request.POST.get('action')
 
         if action == 'save_exhibit':
+            # Move a scanned exhibit into the user's watchlist.
             exhibit_id = request.POST.get('exhibit_id')
             if exhibit_id:
                 exhibit = Exhibit.objects.filter(id=exhibit_id).first()
@@ -149,6 +160,7 @@ def dashboard(request):
             return redirect('dashboard')
 
         elif action == 'add_to_collection':
+            # Add an already-known exhibit into one of the user's saved collections.
             exhibit_id = request.POST.get('exhibit_id')
             collection_id = request.POST.get('collection_id')
             exhibit = Exhibit.objects.filter(id=exhibit_id).first()
@@ -163,6 +175,7 @@ def dashboard(request):
             return redirect('dashboard')
 
         elif action == 'create_collection':
+            # Create a new named collection from dashboard input.
             collection_form = SavedCollectionForm(request.POST)
             if collection_form.is_valid():
                 collection = collection_form.save(commit=False)
@@ -173,6 +186,7 @@ def dashboard(request):
                 return redirect('dashboard')
 
         elif action == 'send_inquiry':
+            # Inquiries require enough profile data for the gallery to reply properly.
             inquiry_form = GalleryInquiryForm(request.POST)
             if inquiry_form.is_valid():
                 missing_fields = []
@@ -193,6 +207,7 @@ def dashboard(request):
                         + '.',
                     )
                 else:
+                    # Save the inquiry and mirror that interest into a Prospect record.
                     inquiry = inquiry_form.save(commit=False)
                     inquiry.user = request.user
                     inquiry.save()
@@ -216,6 +231,7 @@ def dashboard(request):
                     messages.success(request, 'Inquiry sent to the gallery owner.')
                     return redirect('dashboard')
     collection_form = SavedCollectionForm()
+    # Preselect the most relevant exhibit in the inquiry form when possible.
     inquiry_form = GalleryInquiryForm(initial={'exhibit': featured_interest_exhibit} if featured_interest_exhibit else None)
     enquired_exhibit_ids = set(
         GalleryInquiry.objects.filter(user=request.user).values_list('exhibit_id', flat=True)
