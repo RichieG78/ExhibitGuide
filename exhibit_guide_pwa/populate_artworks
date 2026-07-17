@@ -1,0 +1,29 @@
+SELECT artwork_id,
+       title,
+       medium,
+       dimensions_height,
+       dimensions_width,
+       provenance,
+       artist_id
+  FROM artworks;
+
+
+INSERT INTO artworks (title, medium, dimensions_height, dimensions_width, provenance, artist_id) VALUES ('The Starry Night', 'Oil on canvas', 74, 92, 'Painted in June 1889 at the Saint-Paul-de-Mausole asylum, Saint-Rémy-de-Provence. Gifted by Van Gogh to Theo van Gogh, 1889. Acquired by Julien Leclercq, 1900. Passed to Georgette Agutte. Purchased by Lillie P. Bliss, 1929. Bequeathed to the Museum of Modern Art, New York, 1941.', 1);
+
+INSERT INTO artworks (title, medium, dimensions_height, dimensions_width, provenance, artist_id) VALUES ('Girl with a Pearl Earring', 'Oil on canvas', 45, 39, 'Painted c. 1665, The Hague. First recorded at auction in The Hague, 1881, purchased by A. A. des Tombe for 2 guilders and 30 cents. Bequeathed to the Mauritshuis, The Hague, 1902, where it has remained.', 2);
+
+INSERT INTO artworks (title, medium, dimensions_height, dimensions_width, provenance, artist_id) VALUES ('The Great Wave off Kanagawa', 'Woodblock print; ink and colour on paper', 25, 37, 'Published by Nishimuraya Yohachi (Eijudō), Edo (Tokyo), c. 1831. Multiple impressions exist; notable examples held at the Metropolitan Museum of Art, New York; the Art Institute of Chicago; and the British Museum, London.', 3);
+
+INSERT INTO artworks (title, medium, dimensions_height, dimensions_width, provenance, artist_id) VALUES ('Water Lilies (Nymphéas)', 'Oil on canvas', 90, 94, 'One of approximately 250 Water Lilies paintings produced by Monet between 1896 and his death in 1926 at Giverny. This example passed from the artist''s estate to a private French collection, later acquired by a European foundation and exhibited internationally.', 4);
+
+INSERT INTO artworks (title, medium, dimensions_height, dimensions_width, provenance, artist_id) VALUES ('Portrait of Adele Bloch-Bauer I', 'Oil, gold, and silver on canvas', 138, 138, 'Commissioned by Ferdinand Bloch-Bauer, Vienna, 1903–07. Seized by the Nazi regime following the Anschluss, 1938. Restituted to the Bloch-Bauer heirs after landmark US Supreme Court ruling, 2004. Purchased by Ronald Lauder for the Neue Galerie, New York, 2006, for a then-record $135 million.', 5);
+
+INSERT INTO artworks (title, medium, dimensions_height, dimensions_width, provenance, artist_id) VALUES ('Arrangement in Grey and Black No. 1', 'Oil on canvas', 144, 162, 'Painted in London, 1871. Exhibited at the Royal Academy, 1872. Purchased by the French state, 1891, for 4,000 francs on the urging of Stéphane Mallarmé. Permanently held at the Musée d''Orsay, Paris.', 6);
+
+INSERT INTO artworks (title, medium, dimensions_height, dimensions_width, provenance, artist_id) VALUES ('The Fighting Temeraire', 'Oil on canvas', 91, 122, 'Exhibited at the Royal Academy, London, 1839. Turner refused all offers to sell it during his lifetime, calling it ''my darling''. Bequeathed to the British nation by Turner on his death in 1851. National Gallery, London, since 1856.', 7);
+
+INSERT INTO artworks (title, medium, dimensions_height, dimensions_width, provenance, artist_id) VALUES ('Ophelia', 'Oil on canvas', 76, 112, 'Painted 1851–52, London. Exhibited at the Royal Academy, 1852. Purchased by Henry Farrer, 1852. Acquired by Sir Henry Tate, 1894. Presented to the nation; Tate Britain, London, since 1894.', 8);
+
+INSERT INTO artworks (title, medium, dimensions_height, dimensions_width, provenance, artist_id) VALUES ('The Birth of Venus', 'Tempera on canvas', 173, 279, 'Painted c. 1484–86, Florence, likely commissioned by the Medici family. Recorded in the Villa di Castello by 1550. Transferred to the Uffizi Gallery, Florence, 1815, where it remains.', 9);
+
+INSERT INTO artworks (title, medium, dimensions_height, dimensions_width, provenance, artist_id) VALUES ('No. 61 (Rust and Blue)', 'Oil on canvas', 294, 232, 'Painted 1953. Exhibited at the Art Institute of Chicago, 1954. Acquired by a private American collector. Sold at Christie''s New York, 2012 for $75.1 million. Currently in a private European collection.', 10);

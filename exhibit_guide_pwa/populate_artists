@@ -1,0 +1,16 @@
+SELECT artist_id,
+       firstname,
+       lastname,
+       nationality
+  FROM artists;
+
+INSERT INTO artists (firstname, lastname, nationality) VALUES ('Vincent', 'van Gogh', 'Dutch');
+INSERT INTO artists (firstname, lastname, nationality) VALUES ('Johannes', 'Vermeer', 'Dutch');
+INSERT INTO artists (firstname, lastname, nationality) VALUES ('Katsushika', 'Hokusai', 'Japanese');
+INSERT INTO artists (firstname, lastname, nationality) VALUES ('Claude', 'Monet', 'French');
+INSERT INTO artists (firstname, lastname, nationality) VALUES ('Gustav', 'Klimt', 'Austrian');
+INSERT INTO artists (firstname, lastname, nationality) VALUES ('James McNeill', 'Whistler', 'American');
+INSERT INTO artists (firstname, lastname, nationality) VALUES ('J. M. W.', 'Turner', 'British');
+INSERT INTO artists (firstname, lastname, nationality) VALUES ('John Everett', 'Millais', 'British');
+INSERT INTO artists (firstname, lastname, nationality) VALUES ('Sandro', 'Botticelli', 'Italian');
+INSERT INTO artists (firstname, lastname, nationality) VALUES ('Mark', 'Rothko', 'American');

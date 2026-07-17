@@ -62,7 +62,6 @@ class ExhibitFixtureMixin:
 			user=user,
 		)
 
-
 class ExhibitModelTests(ExhibitFixtureMixin, TestCase):
 
 	def test_exhibit_defaults_and_string_representation(self):
