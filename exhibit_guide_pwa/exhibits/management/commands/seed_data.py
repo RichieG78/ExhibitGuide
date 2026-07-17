@@ -379,11 +379,7 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.uffizi.it/en/artworks/birth-of-venus",
         "video_url": "https://www.youtube.com/watch?v=iDMIBMQkBBc",
-        "image_url": (
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/"
-            "Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg/"
-            "1280px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg"
-        ),
+        "image_url": "https://www.uffizi.it/en/artworks/birth-of-venus",
         "qr_identifier": 1009,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 5, 10, 10, 0, 0)),
     },
@@ -421,11 +417,7 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.moma.org/collection/works/79878",
         "video_url": "https://www.youtube.com/watch?v=ItOGcuFJqvc",
-        "image_url": (
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/"
-            "No._61_%28Rust_and_Blue%29_%28Untitled%29%2C_1953_-_Mark_Rothko.jpg/"
-            "800px-No._61_%28Rust_and_Blue%29_%28Untitled%29%2C_1953_-_Mark_Rothko.jpg"
-        ),
+        "image_url": "https://www.moma.org/collection/works/79878",
         "qr_identifier": 1010,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 6, 1, 10, 0, 0)),
     },

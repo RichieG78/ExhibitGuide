@@ -28,7 +28,7 @@
         {# Main hero image and headline for the scanned artwork. #}
         <div class="hero-art">
             <img
-                src="{% if featured_exhibit.image %}{{ featured_exhibit.image.url }}{% else %}{{ featured_exhibit.image_url }}{% endif %}"
+                src="{% if featured_exhibit.image and featured_exhibit.image.name != 'exhibit_images/default.jpg' %}{{ featured_exhibit.image.url }}{% else %}{{ featured_exhibit.image_url }}{% endif %}"
                 alt="{{ featured_exhibit.artwork }} by {{ featured_exhibit.artist }}"
             >
             <div class="hero-overlay">

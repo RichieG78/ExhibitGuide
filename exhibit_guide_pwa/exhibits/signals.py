@@ -12,6 +12,10 @@ def sync_exhibit_image_url(sender, instance, **kwargs):
     if not instance.image:
         return
 
+    # Keep curated/external image_url values when only the default placeholder is set.
+    if instance.image.name == 'exhibit_images/default.jpg':
+        return
+
     current_image_url = instance.image.url
     if instance.image_url == current_image_url:
         return
