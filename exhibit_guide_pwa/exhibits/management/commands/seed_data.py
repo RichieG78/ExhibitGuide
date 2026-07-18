@@ -379,7 +379,10 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.uffizi.it/en/artworks/birth-of-venus",
         "video_url": "https://www.youtube.com/watch?v=iDMIBMQkBBc",
-        "image_url": "https://www.uffizi.it/en/artworks/birth-of-venus",
+        "image_url": (
+            "https://upload.wikimedia.org/wikipedia/commons/0/0b/"
+            "Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg"
+        ),
         "qr_identifier": 1009,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 5, 10, 10, 0, 0)),
     },
@@ -417,7 +420,7 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.moma.org/collection/works/79878",
         "video_url": "https://www.youtube.com/watch?v=ItOGcuFJqvc",
-        "image_url": "https://www.moma.org/collection/works/79878",
+        "image_url": "https://upload.wikimedia.org/wikipedia/en/d/dd/The_Persistence_of_Memory.jpg",
         "qr_identifier": 1010,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 6, 1, 10, 0, 0)),
     },
