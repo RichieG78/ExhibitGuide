@@ -1,22 +1,90 @@
 {% extends "exhibits/base.html" %}
-{% load crispy_forms_tags %} <!-- Updated here to load crispy forms -->
 {% block content %}
+<main class="exhibit-shell auth-shell">
+  <section class="auth-card">
+    <h1 class="auth-title">Register Your Interest</h1>
+    <h2 class="auth-subtitle">Create an account to enquire and track exhibits</h2>
 
-  <div class="container">
-    <h2>Register your Interest</h2>
-    <form method="post">
+    <form method="post" class="auth-form" novalidate>
       {% csrf_token %}
+
       {% if interest_exhibit_id %}
-      <input type="hidden" name="interest_exhibit" value="{{ interest_exhibit_id }}">
+        <input type="hidden" name="interest_exhibit" value="{{ interest_exhibit_id }}">
       {% endif %}
-      {{ form|crispy }}
-      <button type="submit" class="btn btn-primary">Express Interest</button>
+
+      {% if form.non_field_errors %}
+        <div class="auth-errors" aria-live="polite">
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="auth-field">
+        <label for="id_username">Username</label>
+        <input
+          type="text"
+          name="username"
+          id="id_username"
+          value="{{ form.username.value|default:'' }}"
+          required
+          autocomplete="username"
+        >
+        {% if form.username.errors %}
+          <p class="auth-field-error">{{ form.username.errors|join:', ' }}</p>
+        {% endif %}
+      </div>
+
+      <div class="auth-field">
+        <label for="id_email">Email</label>
+        <input
+          type="email"
+          name="email"
+          id="id_email"
+          value="{{ form.email.value|default:'' }}"
+          required
+          autocomplete="email"
+        >
+        {% if form.email.errors %}
+          <p class="auth-field-error">{{ form.email.errors|join:', ' }}</p>
+        {% endif %}
+      </div>
+
+      <div class="auth-field">
+        <label for="id_password1">Password</label>
+        <input
+          type="password"
+          name="password1"
+          id="id_password1"
+          required
+          autocomplete="new-password"
+        >
+        {% if form.password1.errors %}
+          <p class="auth-field-error">{{ form.password1.errors|join:', ' }}</p>
+        {% endif %}
+      </div>
+
+      <div class="auth-field">
+        <label for="id_password2">Confirm Password</label>
+        <input
+          type="password"
+          name="password2"
+          id="id_password2"
+          required
+          autocomplete="new-password"
+        >
+        {% if form.password2.errors %}
+          <p class="auth-field-error">{{ form.password2.errors|join:', ' }}</p>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="auth-submit">Sign Up</button>
     </form>
-     <div class="border-top pt-3"></div>
-        <small class="text-muted">
-          Already have an account? <a class="ml-2" href="{% url 'login' %}{% if interest_exhibit_id %}?interest_exhibit={{ interest_exhibit_id }}{% endif %}">Sign In</a>
-        </small>
-    </div>
-  </div>
-  
+
+    <p class="auth-footnote">
+      Already have an account?
+      <a href="{% url 'login' %}{% if interest_exhibit_id %}?interest_exhibit={{ interest_exhibit_id }}{% endif %}">Sign In</a>
+    </p>
+  </section>
+</main>
 {% endblock content %}

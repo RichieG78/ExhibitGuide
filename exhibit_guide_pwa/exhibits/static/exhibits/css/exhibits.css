@@ -486,6 +486,117 @@ h2 {
     font-size: 0.92rem;
 }
 
+.auth-shell {
+    display: grid;
+    align-content: center;
+    padding-top: 22px;
+    padding-bottom: 24px;
+}
+
+.auth-card {
+    margin: 0 auto;
+    width: min(100%, 520px);
+    padding: 24px 20px;
+    border: 1px solid rgba(231, 228, 220, 0.88);
+    border-radius: var(--radius-xl);
+    background: var(--white);
+    box-shadow: var(--shadow-md);
+}
+
+.auth-title {
+    margin: 0;
+    color: #2f2925;
+    font-family: "DM Serif Display", Georgia, serif;
+    font-size: clamp(1.8rem, 5.2vw, 2.35rem);
+    line-height: 1.05;
+    text-shadow: none;
+}
+
+.auth-subtitle {
+    margin: 9px 0 0;
+    color: #6f665c;
+    font-size: 0.95rem;
+    font-style: normal;
+    line-height: 1.45;
+}
+
+.auth-form {
+    margin-top: 18px;
+    display: grid;
+    gap: 14px;
+}
+
+.auth-field {
+    display: grid;
+    gap: 6px;
+}
+
+.auth-field label {
+    color: #5e554d;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.auth-field input {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #d8c8b0;
+    border-radius: 11px;
+    background: #fffdf9;
+    color: #2c2621;
+    font: inherit;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.auth-field input:focus {
+    outline: none;
+    border-color: #b48858;
+    box-shadow: 0 0 0 3px rgba(180, 136, 88, 0.17);
+}
+
+.auth-errors,
+.auth-field-error {
+    margin: 0;
+    color: #8b1a1a;
+    font-size: 0.84rem;
+    line-height: 1.4;
+}
+
+.auth-submit {
+    margin-top: 4px;
+    padding: 12px 18px;
+    border: 2px solid #8c673e;
+    border-radius: 999px;
+    background: #8c673e;
+    color: #fff7ea;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 12px rgba(140, 103, 62, 0.28);
+    transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.auth-submit:hover,
+.auth-submit:focus-visible {
+    border-color: #734f2a;
+    background: #734f2a;
+    box-shadow: 0 8px 16px rgba(115, 79, 42, 0.34);
+    transform: translateY(-1px);
+}
+
+.auth-footnote {
+    margin: 14px 0 0;
+    color: #6f665c;
+    font-size: 0.92rem;
+}
+
+.auth-footnote a {
+    color: #7f603b;
+    font-weight: 600;
+}
+
 @media (max-width: 370px) {
     h1 {
         font-size: 2.38rem;
@@ -497,6 +608,10 @@ h2 {
 
     .actions button {
         font-size: 0.86rem;
+    }
+
+    .auth-card {
+        padding: 20px 16px;
     }
 }
 
@@ -591,5 +706,10 @@ body.scan-page {
         bottom: auto;
         margin: -28px auto 20px;
         max-width: 640px;
+    }
+
+    .auth-card {
+        width: min(100%, 620px);
+        padding: 30px 28px;
     }
 }

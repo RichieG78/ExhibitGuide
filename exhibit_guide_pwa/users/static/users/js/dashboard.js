@@ -43,7 +43,91 @@ filterButtons.forEach((button) => {
 });
 
 const activeButton = document.querySelector('.filter-pill.is-active');
-const initialFilter = (activeButton && activeButton.getAttribute('data-filter')) || 'scanned';
+const initialFilter = (activeButton && activeButton.getAttribute('data-filter')) || 'watching';
 
 // Sync the first rendered screen with whichever pill the template marked as active.
 applyFilter(initialFilter);
+
+const enquiryToggles = document.querySelectorAll('[data-inquiry-toggle]');
+const enquiryModal = document.querySelector('[data-inquiry-modal]');
+const enquiryCloseButtons = document.querySelectorAll('[data-inquiry-close]');
+const enquiryTitle = document.querySelector('[data-inquiry-title]');
+const enquiryOwner = document.querySelector('[data-inquiry-owner]');
+const enquiryExhibitInput = document.querySelector('[data-inquiry-exhibit]');
+const enquiryMessageInput = document.querySelector('#inquiry-message');
+const phoneMethodInputs = document.querySelectorAll('[data-phone-method]');
+const phoneBlock = document.querySelector('[data-phone-block]');
+const profileConsent = document.querySelector('[data-profile-consent]');
+
+function updatePhoneBlockState() {
+    if (!phoneBlock) {
+        return;
+    }
+
+    const needsPhone = Array.from(phoneMethodInputs).some((input) => input.checked);
+    phoneBlock.classList.toggle('is-hidden', !needsPhone);
+
+    if (profileConsent) {
+        // Only offer profile-save consent when phone/text details are relevant.
+        profileConsent.disabled = !needsPhone;
+        if (!needsPhone) {
+            profileConsent.checked = false;
+        }
+    }
+}
+
+function openEnquiryModal(toggleButton) {
+    if (!enquiryModal || !enquiryExhibitInput) {
+        return;
+    }
+
+    const exhibitId = toggleButton.getAttribute('data-exhibit-id') || '';
+    const artworkTitle = toggleButton.getAttribute('data-artwork-title') || 'This Artwork';
+    const galleryOwner = toggleButton.getAttribute('data-gallery-owner') || 'Gallery Owner';
+
+    enquiryExhibitInput.value = exhibitId;
+    if (enquiryTitle) {
+        enquiryTitle.textContent = `Enquire About ${artworkTitle}`;
+    }
+    if (enquiryOwner) {
+        enquiryOwner.textContent = galleryOwner;
+    }
+    if (enquiryMessageInput) {
+        enquiryMessageInput.value = '';
+    }
+
+    updatePhoneBlockState();
+    enquiryModal.classList.remove('is-hidden');
+    enquiryModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeEnquiryModal() {
+    if (!enquiryModal) {
+        return;
+    }
+
+    enquiryModal.classList.add('is-hidden');
+    enquiryModal.setAttribute('aria-hidden', 'true');
+}
+
+enquiryToggles.forEach((toggle) => {
+    toggle.addEventListener('click', () => {
+        openEnquiryModal(toggle);
+    });
+});
+
+enquiryCloseButtons.forEach((button) => {
+    button.addEventListener('click', closeEnquiryModal);
+});
+
+phoneMethodInputs.forEach((input) => {
+    input.addEventListener('change', updatePhoneBlockState);
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && enquiryModal && !enquiryModal.classList.contains('is-hidden')) {
+        closeEnquiryModal();
+    }
+});
+
+updatePhoneBlockState();

@@ -33,11 +33,11 @@
 
         {# Filter pills switch between dashboard states without a page reload. #}
         <section class="filter-row" aria-label="Artwork filters">
-            <button type="button" class="filter-pill" data-filter="all">All</button>
-            <button type="button" class="filter-pill is-active" data-filter="scanned">Scanned</button>
-            <button type="button" class="filter-pill" data-filter="watching">Watching</button>
-            <button type="button" class="filter-pill" data-filter="enquired">Enquired</button>
-            <button type="button" class="filter-pill" data-filter="acquired">Acquired</button>
+            <button type="button" class="filter-pill {% if initial_filter == 'all' %}is-active{% endif %}" data-filter="all">All</button>
+            <button type="button" class="filter-pill {% if initial_filter == 'scanned' %}is-active{% endif %}" data-filter="scanned">Scanned</button>
+            <button type="button" class="filter-pill {% if initial_filter == 'watching' %}is-active{% endif %}" data-filter="watching">Watching</button>
+            <button type="button" class="filter-pill {% if initial_filter == 'enquired' %}is-active{% endif %}" data-filter="enquired">Enquired</button>
+            <button type="button" class="filter-pill {% if initial_filter == 'acquired' %}is-active{% endif %}" data-filter="acquired">Acquired</button>
         </section>
 
         {# The feed mixes the current scanned work with saved watchlist items. #}
@@ -47,7 +47,7 @@
                     <div class="artwork-image-wrap">
                         <img
                             class="artwork-image"
-                            src="{% if scanned_exhibit.image %}{{ scanned_exhibit.image.url }}{% elif scanned_exhibit.image_url %}{{ scanned_exhibit.image_url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 420'><rect width='720' height='420' fill='%231a1814'/><rect x='60' y='60' width='600' height='300' rx='18' fill='%23302b24'/><text x='360' y='220' text-anchor='middle' font-size='36' font-family='Georgia, serif' fill='%238c8579'>No Artwork Image</text></svg>{% endif %}"
+                            src="{% if scanned_exhibit.image and scanned_exhibit.image.name != 'exhibit_images/default.jpg' %}{{ scanned_exhibit.image.url }}{% elif scanned_exhibit.image_url %}{{ scanned_exhibit.image_url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 420'><rect width='720' height='420' fill='%231a1814'/><rect x='60' y='60' width='600' height='300' rx='18' fill='%23302b24'/><text x='360' y='220' text-anchor='middle' font-size='36' font-family='Georgia, serif' fill='%238c8579'>No Artwork Image</text></svg>{% endif %}"
                             alt="{{ scanned_exhibit.artwork }} by {{ scanned_exhibit.artist }}"
                         >
                     </div>
@@ -68,13 +68,16 @@
                                 <button type="submit" class="chip-button">Add to Watchlist</button>
                             </form>
 
-                            <form method="post" class="mini-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="send_inquiry">
-                                <input type="hidden" name="exhibit" value="{{ scanned_exhibit.id }}">
-                                <input type="hidden" name="message" value="I am interested in {{ scanned_exhibit.artwork }}. Please contact me.">
-                                <button type="submit" class="chip-button chip-muted">Enquire</button>
-                            </form>
+                            <button
+                                type="button"
+                                class="chip-button chip-muted"
+                                data-inquiry-toggle
+                                data-exhibit-id="{{ scanned_exhibit.id }}"
+                                data-artwork-title="{{ scanned_exhibit.artwork|escape }}"
+                                data-gallery-owner="{{ scanned_exhibit.user.get_full_name|default:scanned_exhibit.user.username|escape }}"
+                            >
+                                Enquire
+                            </button>
                         </div>
                     </div>
                 </article>
@@ -89,7 +92,7 @@
                         <div class="artwork-image-wrap">
                             <img
                                 class="artwork-image"
-                                src="{% if item.exhibit.image %}{{ item.exhibit.image.url }}{% elif item.exhibit.image_url %}{{ item.exhibit.image_url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 420'><rect width='720' height='420' fill='%231a1814'/><rect x='60' y='60' width='600' height='300' rx='18' fill='%23302b24'/><text x='360' y='220' text-anchor='middle' font-size='36' font-family='Georgia, serif' fill='%238c8579'>No Artwork Image</text></svg>{% endif %}"
+                                src="{% if item.exhibit.image and item.exhibit.image.name != 'exhibit_images/default.jpg' %}{{ item.exhibit.image.url }}{% elif item.exhibit.image_url %}{{ item.exhibit.image_url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 420'><rect width='720' height='420' fill='%231a1814'/><rect x='60' y='60' width='600' height='300' rx='18' fill='%23302b24'/><text x='360' y='220' text-anchor='middle' font-size='36' font-family='Georgia, serif' fill='%238c8579'>No Artwork Image</text></svg>{% endif %}"
                                 alt="{{ item.exhibit.artwork }} by {{ item.exhibit.artist }}"
                             >
                         </div>
@@ -105,14 +108,25 @@
                             </span>
 
                             <div class="card-actions">
+                                <button
+                                    type="button"
+                                    class="chip-button"
+                                    data-inquiry-toggle
+                                    data-exhibit-id="{{ item.exhibit.id }}"
+                                    data-artwork-title="{{ item.exhibit.artwork|escape }}"
+                                    data-gallery-owner="{{ item.exhibit.user.get_full_name|default:item.exhibit.user.username|escape }}"
+                                >
+                                    Enquire
+                                </button>
+
                                 <form method="post" class="mini-form">
                                     {% csrf_token %}
-                                    <input type="hidden" name="action" value="send_inquiry">
-                                    <input type="hidden" name="exhibit" value="{{ item.exhibit.id }}">
-                                    <input type="hidden" name="message" value="I am interested in {{ item.exhibit.artwork }}. Please contact me.">
-                                    <button type="submit" class="chip-button">Enquire</button>
+                                    <input type="hidden" name="action" value="remove_saved_exhibit">
+                                    <input type="hidden" name="exhibit_id" value="{{ item.exhibit.id }}">
+                                    <button type="submit" class="chip-button chip-muted">Remove</button>
                                 </form>
                             </div>
+
                         </div>
                     </article>
                 {% endfor %}
@@ -125,26 +139,73 @@
             {% endif %}
         </section>
 
-        {# Floating contact action gives the user a quick way to reach the gallery. #}
-        <div class="floating-cta-wrap">
-            <a href="#contact-gallery" class="contact-cta">Contact Gallery</a>
-        </div>
+        <div class="enquiry-modal is-hidden" data-inquiry-modal aria-hidden="true">
+            <div class="enquiry-backdrop" data-inquiry-close></div>
+            <section class="enquiry-sheet" role="dialog" aria-modal="true" aria-labelledby="enquiry-title">
+                <button type="button" class="enquiry-close" data-inquiry-close aria-label="Close enquiry">&times;</button>
+                <p class="enquiry-eyebrow">Contact Gallery</p>
+                <h2 id="enquiry-title" data-inquiry-title>Enquire About This Artwork</h2>
+                <p class="enquiry-gallery">Gallery owner: <span data-inquiry-owner></span></p>
 
-        {# Inquiry form reuses the backend gallery inquiry flow from the dashboard page. #}
-        <section id="contact-gallery" class="inquiry-sheet">
-            <h3>Contact Gallery Owner</h3>
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="send_inquiry">
-                {{ inquiry_form.as_p }}
-                <button type="submit" class="sheet-submit">Send Request</button>
-            </form>
-        </section>
+                {% if profile_missing_fields %}
+                    <p class="enquiry-profile-note">
+                        Your profile is missing {{ profile_missing_fields|join:', ' }}. Add details below if you want faster future enquiries.
+                    </p>
+                {% endif %}
+
+                <form method="post" class="enquiry-form" data-inquiry-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="send_inquiry">
+                    <input type="hidden" name="exhibit" value="" data-inquiry-exhibit>
+
+                    <label for="inquiry-message">Message (optional)</label>
+                    <textarea id="inquiry-message" name="message" rows="4" placeholder="Optional message to the gallery owner."></textarea>
+
+                    <fieldset class="enquiry-fieldset">
+                        <legend>How should the gallery contact you?</legend>
+                        <label class="choice-row">
+                            <input type="checkbox" name="contact_methods" value="email" checked>
+                            <span>Email</span>
+                        </label>
+                        <label class="choice-row">
+                            <input type="checkbox" name="contact_methods" value="phone" data-phone-method>
+                            <span>Phone call</span>
+                        </label>
+                        <label class="choice-row">
+                            <input type="checkbox" name="contact_methods" value="text" data-phone-method>
+                            <span>Text message</span>
+                        </label>
+                    </fieldset>
+
+                    <label for="contact-email">Contact Email</label>
+                    <input id="contact-email" type="email" name="contact_email" value="{{ user.email }}" placeholder="you@example.com">
+
+                    <div class="profile-grid">
+                        <label for="first-name">First name</label>
+                        <input id="first-name" type="text" name="first_name" value="{{ profile_first_name }}" maxlength="150">
+
+                        <label for="last-name">Last name</label>
+                        <input id="last-name" type="text" name="last_name" value="{{ profile_last_name }}" maxlength="150">
+                    </div>
+
+                    <div class="phone-block is-hidden" data-phone-block>
+                        <label for="contact-phone">Phone number</label>
+                        <input id="contact-phone" type="tel" name="contact_phone" value="{{ profile_phone }}" placeholder="Add phone for phone/text replies">
+
+                        <label class="choice-row consent-row">
+                            <input type="checkbox" name="save_to_profile" value="on" data-profile-consent>
+                            <span>Save these details to my profile to speed up future enquiries.</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="sheet-submit">Enquire Now</button>
+                </form>
+            </section>
+        </div>
 
         <nav class="bottom-nav" aria-label="Primary">
             <a href="{% url 'dashboard' %}" class="nav-item is-active" aria-label="Saved exhibits">&#8962;</a>
             <a href="{% url 'scan' %}" class="nav-item" aria-label="Explore">&#9711;</a>
-            <a href="#contact-gallery" class="nav-item" aria-label="Inquiries">&#128278;</a>
             <a href="{% url 'profile' %}" class="nav-item" aria-label="Profile">&#9787;</a>
         </nav>
     </main>

@@ -159,6 +159,19 @@ def dashboard(request):
                     messages.error(request, 'Exhibit not found.')
             return redirect('dashboard')
 
+        elif action == 'remove_saved_exhibit':
+            # Remove an exhibit from the user's watchlist.
+            exhibit_id = request.POST.get('exhibit_id')
+            deleted_count, _ = SavedExhibit.objects.filter(
+                user=request.user,
+                exhibit_id=exhibit_id,
+            ).delete()
+            if deleted_count:
+                messages.success(request, 'Removed from your watchlist.')
+            else:
+                messages.error(request, 'Could not remove this exhibit from your watchlist.')
+            return redirect('dashboard')
+
         elif action == 'add_to_collection':
             # Add an already-known exhibit into one of the user's saved collections.
             exhibit_id = request.POST.get('exhibit_id')
@@ -186,64 +199,129 @@ def dashboard(request):
                 return redirect('dashboard')
 
         elif action == 'send_inquiry':
-            # Inquiries require enough profile data for the gallery to reply properly.
+            # Inquiries can be sent immediately, with optional profile enrichment.
             inquiry_form = GalleryInquiryForm(request.POST)
             if inquiry_form.is_valid():
-                missing_fields = []
-                if not profile or not profile.firstname:
-                    missing_fields.append('first name')
-                if not profile or not profile.lastname:
-                    missing_fields.append('last name')
-                if not request.user.email:
-                    missing_fields.append('email')
-                if not profile or not profile.phone:
-                    missing_fields.append('phone')
+                selected_methods = request.POST.getlist('contact_methods')
+                if not selected_methods:
+                    selected_methods = ['email']
 
-                if missing_fields:
-                    messages.error(
-                        request,
-                        'Please complete your profile before sending an inquiry: '
-                        + ', '.join(missing_fields)
-                        + '.',
-                    )
-                else:
-                    # Save the inquiry and mirror that interest into a Prospect record.
-                    inquiry = inquiry_form.save(commit=False)
-                    inquiry.user = request.user
-                    inquiry.save()
+                wants_phone_contact = any(method in {'phone', 'text'} for method in selected_methods)
+                posted_phone = (request.POST.get('contact_phone') or '').strip()
+                profile_phone = (profile.phone if profile else '').strip()
+                phone_for_contact = posted_phone or profile_phone
 
-                    prospect, created = Prospect.objects.get_or_create(
-                        exhibit=inquiry.exhibit,
-                        email=request.user.email,
-                        defaults={
-                            'name': f"{profile.firstname if profile else ''} {profile.lastname if profile else ''}".strip(),
-                            'phone': profile.phone if profile else '',
-                            'dwell_time': 0,
-                            'call_back_request': True,
-                        },
-                    )
-                    if not created:
-                        prospect.name = f"{profile.firstname if profile else ''} {profile.lastname if profile else ''}".strip() or prospect.name
-                        prospect.phone = profile.phone if profile else prospect.phone
-                        prospect.call_back_request = True
-                        prospect.save(update_fields=['name', 'phone', 'call_back_request'])
+                contact_email = (request.POST.get('contact_email') or request.user.email or '').strip()
 
-                    messages.success(request, 'Inquiry sent to the gallery owner.')
+                if not contact_email:
+                    messages.error(request, 'Please add an email address so the gallery can reply.')
                     return redirect('dashboard')
+
+                if wants_phone_contact and not phone_for_contact:
+                    messages.error(request, 'Phone number is required when selecting phone or text contact.')
+                    return redirect('dashboard')
+
+                # Save the inquiry and include selected contact preferences in the message body.
+                inquiry = inquiry_form.save(commit=False)
+                inquiry.user = request.user
+                methods_label = ', '.join(method.title() for method in selected_methods)
+                inquiry.message = f"{inquiry.message}\n\nPreferred contact methods: {methods_label}"
+                if wants_phone_contact:
+                    inquiry.message += f"\nPhone: {phone_for_contact}"
+                inquiry.save()
+
+                first_name = (
+                    (request.POST.get('first_name') or '').strip()
+                    or (profile.firstname if profile else '').strip()
+                    or request.user.first_name
+                )
+                last_name = (
+                    (request.POST.get('last_name') or '').strip()
+                    or (profile.lastname if profile else '').strip()
+                    or request.user.last_name
+                )
+                full_name = f'{first_name} {last_name}'.strip() or request.user.username
+
+                prospect, created = Prospect.objects.get_or_create(
+                    exhibit=inquiry.exhibit,
+                    email=contact_email,
+                    defaults={
+                        'name': full_name,
+                        'phone': phone_for_contact,
+                        'dwell_time': 0,
+                        'call_back_request': wants_phone_contact,
+                    },
+                )
+                if not created:
+                    prospect.name = full_name or prospect.name
+                    if phone_for_contact:
+                        prospect.phone = phone_for_contact
+                    prospect.call_back_request = wants_phone_contact
+                    prospect.save(update_fields=['name', 'phone', 'call_back_request'])
+
+                save_to_profile = request.POST.get('save_to_profile') == 'on'
+                if save_to_profile:
+                    profile_obj, _ = UserProfile.objects.get_or_create(user=request.user)
+                    updated_fields = []
+
+                    if first_name and profile_obj.firstname != first_name:
+                        profile_obj.firstname = first_name
+                        updated_fields.append('firstname')
+                    if last_name and profile_obj.lastname != last_name:
+                        profile_obj.lastname = last_name
+                        updated_fields.append('lastname')
+                    if phone_for_contact and profile_obj.phone != phone_for_contact:
+                        profile_obj.phone = phone_for_contact
+                        updated_fields.append('phone')
+                    if updated_fields:
+                        profile_obj.save(update_fields=updated_fields)
+                        profile = profile_obj
+
+                    if contact_email and request.user.email != contact_email:
+                        request.user.email = contact_email
+                        request.user.save(update_fields=['email'])
+
+                messages.success(request, 'Inquiry sent to the gallery owner.')
+                return redirect('dashboard')
+            messages.error(request, 'Could not send inquiry. Please check the form and try again.')
+            return redirect('dashboard')
     collection_form = SavedCollectionForm()
-    # Preselect the most relevant exhibit in the inquiry form when possible.
-    inquiry_form = GalleryInquiryForm(initial={'exhibit': featured_interest_exhibit} if featured_interest_exhibit else None)
     enquired_exhibit_ids = set(
         GalleryInquiry.objects.filter(user=request.user).values_list('exhibit_id', flat=True)
     )
+    watching_exhibit_ids = saved_exhibit_ids - enquired_exhibit_ids
+
+    if scanned_exhibit:
+        initial_filter = 'scanned'
+    elif watching_exhibit_ids:
+        initial_filter = 'watching'
+    elif enquired_exhibit_ids:
+        # Keep the first visible state on load when all saved cards are already enquired.
+        initial_filter = 'enquired'
+    else:
+        initial_filter = 'watching'
+
+    profile_missing_fields = []
+    if not profile or not profile.firstname:
+        profile_missing_fields.append('first name')
+    if not profile or not profile.lastname:
+        profile_missing_fields.append('last name')
+    if not request.user.email:
+        profile_missing_fields.append('email')
+    if not profile or not profile.phone:
+        profile_missing_fields.append('phone')
 
     context = {
         'collection_form': collection_form,
-        'inquiry_form': inquiry_form,
         'saved_exhibits': saved_exhibits,
         'scanned_exhibit': scanned_exhibit,
         'enquired_exhibit_ids': enquired_exhibit_ids,
         'collections': collections,
         'featured_interest_exhibit': featured_interest_exhibit,
+        'initial_filter': initial_filter,
+        'profile_missing_fields': profile_missing_fields,
+        'profile_first_name': (profile.firstname if profile else '') or request.user.first_name,
+        'profile_last_name': (profile.lastname if profile else '') or request.user.last_name,
+        'profile_phone': (profile.phone if profile else ''),
     }
     return render(request, 'users/dashboard.html', context)

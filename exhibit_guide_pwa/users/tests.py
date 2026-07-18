@@ -148,6 +148,49 @@ class UsersViewStabilityTests(UsersFixtureMixin, TestCase):
 			1,
 		)
 
+	def test_dashboard_remove_saved_exhibit_action(self):
+		SavedExhibit.objects.create(user=self.user, exhibit=self.exhibit)
+		self.client.login(username=self.user.username, password='pw123456')
+
+		response = self.client.post(
+			reverse('dashboard'),
+			{'action': 'remove_saved_exhibit', 'exhibit_id': self.exhibit.id},
+		)
+
+		self.assertEqual(response.status_code, 302)
+		self.assertFalse(SavedExhibit.objects.filter(user=self.user, exhibit=self.exhibit).exists())
+
+	def test_dashboard_initial_filter_is_scanned_for_scan_origin(self):
+		self.client.login(username=self.user.username, password='pw123456')
+
+		response = self.client.get(reverse('dashboard'), {'interest_exhibit': self.exhibit.id})
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.context['initial_filter'], 'scanned')
+
+	def test_dashboard_initial_filter_is_watching_without_scan_context(self):
+		SavedExhibit.objects.create(user=self.user, exhibit=self.exhibit)
+		self.client.login(username=self.user.username, password='pw123456')
+
+		response = self.client.get(reverse('dashboard'))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.context['initial_filter'], 'watching')
+
+	def test_dashboard_initial_filter_is_enquired_when_only_enquired_saved_items_exist(self):
+		SavedExhibit.objects.create(user=self.user, exhibit=self.exhibit)
+		GalleryInquiry.objects.create(
+			user=self.user,
+			exhibit=self.exhibit,
+			message='Interested in this artwork.',
+		)
+		self.client.login(username=self.user.username, password='pw123456')
+
+		response = self.client.get(reverse('dashboard'))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.context['initial_filter'], 'enquired')
+
 	def test_dashboard_create_collection_action(self):
 		self.client.login(username=self.user.username, password='pw123456')
 
@@ -165,7 +208,7 @@ class UsersViewStabilityTests(UsersFixtureMixin, TestCase):
 		collection = SavedCollection.objects.get(user=self.user, name='Weekend Shortlist')
 		self.assertEqual(collection.exhibits.count(), 1)
 
-	def test_dashboard_send_inquiry_requires_complete_profile(self):
+	def test_dashboard_send_inquiry_creates_inquiry_and_prospect_without_profile(self):
 		self.client.login(username=self.user.username, password='pw123456')
 
 		response = self.client.post(
@@ -173,38 +216,71 @@ class UsersViewStabilityTests(UsersFixtureMixin, TestCase):
 			{
 				'action': 'send_inquiry',
 				'exhibit': self.exhibit.id,
-				'message': 'I am interested in this work.',
-			},
-		)
-
-		self.assertEqual(response.status_code, 200)
-		self.assertEqual(GalleryInquiry.objects.filter(user=self.user).count(), 0)
-		self.assertEqual(Prospect.objects.filter(email=self.user.email, exhibit=self.exhibit).count(), 0)
-
-	def test_dashboard_send_inquiry_creates_inquiry_and_prospect(self):
-		UserProfile.objects.create(
-			user=self.user,
-			firstname='Ada',
-			lastname='Lovelace',
-			phone='+3531234567',
-		)
-		self.client.login(username=self.user.username, password='pw123456')
-
-		response = self.client.post(
-			reverse('dashboard'),
-			{
-				'action': 'send_inquiry',
-				'exhibit': self.exhibit.id,
-				'message': 'Could you share provenance details?',
+				'contact_methods': ['email'],
 			},
 		)
 
 		self.assertEqual(response.status_code, 302)
 		self.assertRedirects(response, reverse('dashboard'))
 		self.assertEqual(GalleryInquiry.objects.filter(user=self.user, exhibit=self.exhibit).count(), 1)
+		inquiry = GalleryInquiry.objects.get(user=self.user, exhibit=self.exhibit)
+		self.assertIn('Preferred contact methods: Email', inquiry.message)
+
 		prospect = Prospect.objects.get(email=self.user.email, exhibit=self.exhibit)
+		self.assertEqual(prospect.name, self.user.username)
+		self.assertEqual(prospect.phone, '')
+		self.assertFalse(prospect.call_back_request)
+
+	def test_dashboard_send_inquiry_requires_phone_for_phone_or_text_contact(self):
+		self.client.login(username=self.user.username, password='pw123456')
+
+		response = self.client.post(
+			reverse('dashboard'),
+			{
+				'action': 'send_inquiry',
+				'exhibit': self.exhibit.id,
+				'contact_methods': ['phone'],
+				'contact_email': self.user.email,
+			},
+		)
+
+		self.assertEqual(response.status_code, 302)
+		self.assertRedirects(response, reverse('dashboard'))
+		self.assertEqual(GalleryInquiry.objects.filter(user=self.user, exhibit=self.exhibit).count(), 0)
+		self.assertEqual(Prospect.objects.filter(email=self.user.email, exhibit=self.exhibit).count(), 0)
+
+	def test_dashboard_send_inquiry_save_to_profile_updates_user_profile(self):
+		self.client.login(username=self.user.username, password='pw123456')
+
+		response = self.client.post(
+			reverse('dashboard'),
+			{
+				'action': 'send_inquiry',
+				'exhibit': self.exhibit.id,
+				'message': 'Please text me with details.',
+				'contact_methods': ['email', 'text'],
+				'contact_email': 'new-contact@example.com',
+				'first_name': 'Ada',
+				'last_name': 'Lovelace',
+				'contact_phone': '+3538888888',
+				'save_to_profile': 'on',
+			},
+		)
+
+		self.assertEqual(response.status_code, 302)
+		self.assertRedirects(response, reverse('dashboard'))
+
+		profile = UserProfile.objects.get(user=self.user)
+		self.assertEqual(profile.firstname, 'Ada')
+		self.assertEqual(profile.lastname, 'Lovelace')
+		self.assertEqual(profile.phone, '+3538888888')
+
+		self.user.refresh_from_db()
+		self.assertEqual(self.user.email, 'new-contact@example.com')
+
+		prospect = Prospect.objects.get(email='new-contact@example.com', exhibit=self.exhibit)
 		self.assertEqual(prospect.name, 'Ada Lovelace')
-		self.assertEqual(prospect.phone, '+3531234567')
+		self.assertEqual(prospect.phone, '+3538888888')
 		self.assertTrue(prospect.call_back_request)
 
 	def test_dashboard_send_inquiry_updates_existing_prospect(self):
@@ -230,6 +306,7 @@ class UsersViewStabilityTests(UsersFixtureMixin, TestCase):
 				'action': 'send_inquiry',
 				'exhibit': self.exhibit.id,
 				'message': 'Please contact me.',
+				'contact_methods': ['phone'],
 			},
 		)
 

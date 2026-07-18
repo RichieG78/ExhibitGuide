@@ -51,7 +51,28 @@ class SavedCollectionForm(forms.ModelForm):
 
 class GalleryInquiryForm(forms.ModelForm):
     """Simple form that sends a message to the gallery about one exhibit."""
+
+    message = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                'rows': 4,
+                'placeholder': 'Optional message to the gallery owner.',
+            }
+        ),
+    )
+
     class Meta:
         model = GalleryInquiry
         fields = ['exhibit', 'message']
+
+    def clean_message(self):
+        message = (self.cleaned_data.get('message') or '').strip()
+        if message:
+            return message
+
+        exhibit = self.cleaned_data.get('exhibit')
+        if exhibit:
+            return f'I am interested in {exhibit.artwork}. Please contact me.'
+        return 'I am interested in this artwork. Please contact me.'
 
