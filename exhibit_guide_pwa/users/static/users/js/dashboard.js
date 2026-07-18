@@ -58,6 +58,16 @@ const enquiryMessageInput = document.querySelector('#inquiry-message');
 const phoneMethodInputs = document.querySelectorAll('[data-phone-method]');
 const phoneBlock = document.querySelector('[data-phone-block]');
 const profileConsent = document.querySelector('[data-profile-consent]');
+let lastEnquiryToggle = null;
+
+const modalFocusableSelector = [
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'textarea:not([disabled])',
+    'select:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])',
+].join(',');
 
 function updatePhoneBlockState() {
     if (!phoneBlock) {
@@ -81,6 +91,8 @@ function openEnquiryModal(toggleButton) {
         return;
     }
 
+    lastEnquiryToggle = toggleButton;
+
     const exhibitId = toggleButton.getAttribute('data-exhibit-id') || '';
     const artworkTitle = toggleButton.getAttribute('data-artwork-title') || 'This Artwork';
     const galleryOwner = toggleButton.getAttribute('data-gallery-owner') || 'Gallery Owner';
@@ -99,6 +111,10 @@ function openEnquiryModal(toggleButton) {
     updatePhoneBlockState();
     enquiryModal.classList.remove('is-hidden');
     enquiryModal.setAttribute('aria-hidden', 'false');
+
+    if (enquiryMessageInput) {
+        enquiryMessageInput.focus();
+    }
 }
 
 function closeEnquiryModal() {
@@ -108,6 +124,48 @@ function closeEnquiryModal() {
 
     enquiryModal.classList.add('is-hidden');
     enquiryModal.setAttribute('aria-hidden', 'true');
+
+    if (lastEnquiryToggle) {
+        lastEnquiryToggle.focus();
+    }
+}
+
+function handleEnquiryModalKeyboard(event) {
+    if (!enquiryModal || enquiryModal.classList.contains('is-hidden')) {
+        return;
+    }
+
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        closeEnquiryModal();
+        return;
+    }
+
+    if (event.key !== 'Tab') {
+        return;
+    }
+
+    const focusable = Array.from(enquiryModal.querySelectorAll(modalFocusableSelector)).filter((element) =>
+        element.getClientRects().length > 0
+    );
+
+    if (focusable.length === 0) {
+        return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+    }
+
+    if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+    }
 }
 
 enquiryToggles.forEach((toggle) => {
@@ -124,10 +182,6 @@ phoneMethodInputs.forEach((input) => {
     input.addEventListener('change', updatePhoneBlockState);
 });
 
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && enquiryModal && !enquiryModal.classList.contains('is-hidden')) {
-        closeEnquiryModal();
-    }
-});
+document.addEventListener('keydown', handleEnquiryModalKeyboard);
 
 updatePhoneBlockState();

@@ -63,6 +63,7 @@ class ExhibitFixtureMixin:
 		)
 
 class ExhibitModelTests(ExhibitFixtureMixin, TestCase):
+	"""Model-level behavior checks for Exhibit defaults, properties, and save logic."""
 
 	def test_exhibit_defaults_and_string_representation(self):
 		# This test checks that a new Exhibit gets expected default values
@@ -100,6 +101,8 @@ class ExhibitModelTests(ExhibitFixtureMixin, TestCase):
 
 
 class ProspectModelTests(ExhibitFixtureMixin, TestCase):
+	"""Model-level checks for Prospect display text and linked exhibit context."""
+
 	def setUp(self):
 		self.exhibit = self.make_exhibit(
 			show_name='Winter Collection',
@@ -133,6 +136,8 @@ class ProspectModelTests(ExhibitFixtureMixin, TestCase):
 
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
 class ExhibitViewsTests(ExhibitFixtureMixin, TestCase):
+	"""Route and template rendering checks for public exhibit views."""
+
 	def test_scan_view_uses_scan_template(self):
 		# This test checks the main scan page loads successfully and uses
 		# the expected template.

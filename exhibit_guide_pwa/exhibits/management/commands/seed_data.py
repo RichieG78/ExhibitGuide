@@ -425,9 +425,12 @@ SEED_EXHIBITS = [
 
 
 class Command(BaseCommand):
+    """Create a deterministic sample dataset for local demos and manual testing."""
+
     help = "Seed the database with 10 dummy exhibits for testing."
 
     def add_arguments(self, parser):
+        """Register optional command flags controlling seed behavior."""
         parser.add_argument(
             "--clear",
             action="store_true",
@@ -441,6 +444,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """Seed artists, artworks, shows, and exhibits using idempotent upserts."""
         if options["clear"]:
             count, _ = Exhibit.objects.all().delete()
             self.stdout.write(self.style.WARNING(f"Deleted {count} existing exhibit(s)."))
@@ -456,6 +460,7 @@ class Command(BaseCommand):
             },
         )
         if created:
+            # Local-only convenience password so evaluators can immediately sign in.
             user.set_password("password123")
             user.save()
             self.stdout.write(

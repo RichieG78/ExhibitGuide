@@ -597,6 +597,43 @@ h2 {
     font-weight: 600;
 }
 
+.auth-copy {
+    margin: 10px 0 0;
+    color: #6f665c;
+    line-height: 1.6;
+}
+
+.auth-form-generic p {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.auth-form-generic label {
+    color: #5e554d;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.auth-form-generic input {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #d8c8b0;
+    border-radius: 11px;
+    background: #fffdf9;
+    color: #2c2621;
+    font: inherit;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.auth-form-generic input:focus {
+    outline: none;
+    border-color: #b48858;
+    box-shadow: 0 0 0 3px rgba(180, 136, 88, 0.17);
+}
+
 @media (max-width: 370px) {
     h1 {
         font-size: 2.38rem;

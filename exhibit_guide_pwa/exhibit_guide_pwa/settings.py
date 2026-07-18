@@ -28,7 +28,9 @@ SECRET_KEY = 'django-insecure-b_civ52+_p#wg-=63tig8ewt8-(%fxe^(4nsx24blvokw(b+&x
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
 def _csv_env(value):
+    """Split a comma-separated environment variable into a clean list."""
     return [item.strip() for item in value.split(',') if item.strip()]
 
 
@@ -42,8 +44,8 @@ ALLOWED_HOSTS = _csv_env(
 INSTALLED_APPS = [
     'exhibits.apps.ExhibitsConfig',
     'users.apps.UsersConfig',
-    "crispy_forms", #Updated here
-    "crispy_bootstrap5", #Updated here
+    'crispy_forms',
+    'crispy_bootstrap5',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

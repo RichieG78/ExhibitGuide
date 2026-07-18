@@ -4,7 +4,7 @@
     {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ featured_exhibit.artwork }} | {{ featured_exhibit.gallery_name }}</title>
+    <title>{% block title %}{% if featured_exhibit %}{{ featured_exhibit.artwork }} | {{ featured_exhibit.gallery_name }}{% else %}ExhibitGuide{% endif %}{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'exhibits/css/exhibits.css' %}?v=20260718c">
 </head>
 <body class="exhibit-page">

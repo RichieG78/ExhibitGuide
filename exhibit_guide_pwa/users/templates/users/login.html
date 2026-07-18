@@ -1,10 +1,11 @@
 {% extends "exhibits/base.html" %}
 {% block content %}
-<main class="exhibit-shell">
-  <h1>Sign In</h1>
-  <h2>Access your account</h2>
+<main class="exhibit-shell auth-shell">
+  <section class="auth-card">
+    <h1 class="auth-title">Sign In</h1>
+    <h2 class="auth-subtitle">Access your account</h2>
 
-  <form method="post" style="margin-top: 22px;">
+    <form method="post" class="auth-form" novalidate>
     {% csrf_token %}
 
     {% if interest_exhibit_id %}
@@ -12,35 +13,42 @@
     {% endif %}
 
     {% if form.non_field_errors %}
-      <div style="margin-bottom: 14px; color: #8b1a1a;">
-        {{ form.non_field_errors }}
+      <div class="auth-errors" aria-live="polite">
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
       </div>
     {% endif %}
 
-    <div style="margin-bottom: 12px;">
-      <label for="id_username" style="display: block; margin-bottom: 6px;">Username</label>
-      <input type="text" name="username" id="id_username" required autofocus style="width: 100%; padding: 10px 12px; border: 1px solid #d8c8b0; border-radius: 10px;">
+    <div class="auth-field">
+      <label for="id_username">Username</label>
+      <input type="text" name="username" id="id_username" required autofocus autocomplete="username">
+      {% if form.username.errors %}
+        <p class="auth-field-error">{{ form.username.errors|join:', ' }}</p>
+      {% endif %}
     </div>
 
-    <div style="margin-bottom: 16px;">
-      <label for="id_password" style="display: block; margin-bottom: 6px;">Password</label>
-      <input type="password" name="password" id="id_password" required style="width: 100%; padding: 10px 12px; border: 1px solid #d8c8b0; border-radius: 10px;">
+    <div class="auth-field">
+      <label for="id_password">Password</label>
+      <input type="password" name="password" id="id_password" required autocomplete="current-password">
+      {% if form.password.errors %}
+        <p class="auth-field-error">{{ form.password.errors|join:', ' }}</p>
+      {% endif %}
     </div>
 
     {% if request.GET.next %}
       <input type="hidden" name="next" value="{{ request.GET.next }}">
     {% endif %}
 
-    <button type="submit" style="padding: 12px 18px; border: 0; border-radius: 999px; background: #8b5e34; color: #fff; cursor: pointer;">
-      Log In
-    </button>
-  </form>
+      <button type="submit" class="auth-submit">Log In</button>
+    </form>
 
-  <p style="margin-top: 14px; color: #6f6253;">
-    New here? <a href="{% url 'register' %}{% if interest_exhibit_id %}?interest_exhibit={{ interest_exhibit_id }}{% endif %}">Create an account</a>
-  </p>
-  <p style="margin-top: 8px; color: #6f6253;">
-    Forgot your password? <a href="{% url 'password_reset' %}">Reset it</a>
-  </p>
+    <p class="auth-footnote">
+      New here? <a href="{% url 'register' %}{% if interest_exhibit_id %}?interest_exhibit={{ interest_exhibit_id }}{% endif %}">Create an account</a>
+    </p>
+    <p class="auth-footnote">
+      Forgot your password? <a href="{% url 'password_reset' %}">Reset it</a>
+    </p>
+  </section>
 </main>
 {% endblock content %}

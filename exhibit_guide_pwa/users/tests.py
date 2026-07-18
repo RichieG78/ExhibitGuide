@@ -42,6 +42,8 @@ class UsersFixtureMixin:
 
 
 class ProspectModelTests(UsersFixtureMixin, TestCase):
+	"""Model-level checks for compatibility helpers and string formatting on Prospect."""
+
 	def test_name_compatibility_properties_and_str(self):
 		exhibit = self.make_exhibit(title='Blue Geometry')
 		prospect = Prospect.objects.create(
@@ -72,6 +74,8 @@ class ProspectModelTests(UsersFixtureMixin, TestCase):
 
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
 class UsersViewStabilityTests(UsersFixtureMixin, TestCase):
+	"""Integration tests for register/login/profile/dashboard user flows."""
+
 	def setUp(self):
 		self.user = self.make_user()
 		self.owner = self.make_user(username='owner-1', email='owner@example.com')
@@ -315,3 +319,21 @@ class UsersViewStabilityTests(UsersFixtureMixin, TestCase):
 		self.assertEqual(prospect.name, 'Ada Lovelace')
 		self.assertEqual(prospect.phone, '+3539999999')
 		self.assertTrue(prospect.call_back_request)
+
+	def test_dashboard_enquiry_modal_accessibility_contract_is_present(self):
+		"""Render-level guard for modal hooks used by keyboard/focus handling JS."""
+		SavedExhibit.objects.create(user=self.user, exhibit=self.exhibit)
+		self.client.login(username=self.user.username, password='pw123456')
+
+		response = self.client.get(reverse('dashboard'))
+		self.assertEqual(response.status_code, 200)
+
+		html = response.content.decode('utf-8')
+		self.assertIn('data-inquiry-modal', html)
+		self.assertIn('aria-hidden="true"', html)
+		self.assertIn('data-inquiry-close', html)
+		self.assertIn('data-inquiry-toggle', html)
+		self.assertIn('id="inquiry-message"', html)
+		self.assertIn('data-inquiry-form', html)
+		self.assertIn('data-phone-block', html)
+		self.assertIn('data-profile-consent', html)

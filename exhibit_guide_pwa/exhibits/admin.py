@@ -55,6 +55,7 @@ class ArtistAdmin(admin.ModelAdmin):
 	inlines = (ArtworkInline,)
 
 	def artwork_count(self, obj):
+		"""Return the number of artworks linked to this artist."""
 		return obj.artworks.count()
 
 	artwork_count.short_description = 'Artworks'
@@ -70,6 +71,7 @@ class ShowAdmin(admin.ModelAdmin):
 	inlines = (ShowExhibitInline,)
 
 	def exhibit_count(self, obj):
+		"""Return how many exhibits are currently attached to the show."""
 		return obj.exhibits.count()
 
 	exhibit_count.short_description = 'Exhibits'
@@ -86,6 +88,7 @@ class ArtworkAdmin(admin.ModelAdmin):
 	inlines = (ArtworkExhibitInline,)
 
 	def exhibit_count(self, obj):
+		"""Return how many exhibit records use this artwork."""
 		return obj.exhibits.count()
 
 	exhibit_count.short_description = 'Exhibits'
@@ -150,11 +153,13 @@ class ExhibitAdmin(admin.ModelAdmin):
 	public_preview_url.short_description = 'Public exhibit URL'
 
 	def inquiry_count(self, obj):
+		"""Return number of gallery inquiries received for this exhibit."""
 		return obj.gallery_inquiries.count()
 
 	inquiry_count.short_description = 'Inquiries'
 
 	def prospect_count(self, obj):
+		"""Return number of prospect records generated from this exhibit."""
 		return obj.prospects.count()
 
 	prospect_count.short_description = 'Prospects'
@@ -170,6 +175,7 @@ class ProspectAdmin(admin.ModelAdmin):
 	autocomplete_fields = ('exhibit',)
 
 	def show_name(self, obj):
+		"""Expose related show name in the prospect list table."""
 		return obj.exhibit.show.show_name if obj.exhibit and obj.exhibit.show else ''
 
 	show_name.short_description = 'Show'
@@ -192,16 +198,19 @@ class GalleryInquiryAdmin(admin.ModelAdmin):
 	readonly_fields = ('created_at',)
 
 	def artwork_title(self, obj):
+		"""Expose related artwork title in the inquiry list table."""
 		return obj.exhibit.artwork.title if obj.exhibit and obj.exhibit.artwork else ''
 
 	artwork_title.short_description = 'Artwork'
 
 	def show_name(self, obj):
+		"""Expose related show name in the inquiry list table."""
 		return obj.exhibit.show.show_name if obj.exhibit and obj.exhibit.show else ''
 
 	show_name.short_description = 'Show'
 
 	def message_preview(self, obj):
+		"""Show a short preview so long inquiry messages don't overwhelm the list view."""
 		message = (obj.message or '').strip()
 		if len(message) <= 80:
 			return message

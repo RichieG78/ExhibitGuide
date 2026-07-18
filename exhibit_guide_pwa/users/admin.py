@@ -34,6 +34,7 @@ class SavedCollectionAdmin(admin.ModelAdmin):
 	autocomplete_fields = ('user', 'exhibits')
 
 	def exhibit_count(self, obj):
+		"""Return number of exhibits included in the saved collection."""
 		return obj.exhibits.count()
 
 	exhibit_count.short_description = 'Exhibits'
