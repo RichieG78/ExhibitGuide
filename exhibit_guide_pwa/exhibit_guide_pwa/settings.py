@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
@@ -63,9 +64,60 @@ def _csv_env(value):
     return [item.strip() for item in value.split(',') if item.strip()]
 
 
-ALLOWED_HOSTS = _csv_env(
-    os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
-)
+def _normalize_host(value):
+    """Normalize host entries so env values can include scheme/port/path safely."""
+    raw = (value or '').strip()
+    if not raw:
+        return ''
+
+    candidate = raw if '://' in raw else f'//{raw}'
+    parsed = urlparse(candidate)
+    host = (parsed.hostname or raw).strip().lower().rstrip('.')
+    return host
+
+
+def _build_allowed_hosts():
+    """Build ALLOWED_HOSTS from env plus Render hostname conventions."""
+    hosts = []
+
+    for host in _csv_env(os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')):
+        normalized = _normalize_host(host)
+        if normalized:
+            hosts.append(normalized)
+
+    render_hostname = _normalize_host(os.getenv('RENDER_EXTERNAL_HOSTNAME', ''))
+    if render_hostname:
+        hosts.append(render_hostname)
+
+    # Keep the known production host as an additional safe fallback.
+    hosts.append('exhibitguide.onrender.com')
+
+    # Preserve order while removing duplicates.
+    seen = set()
+    unique_hosts = []
+    for host in hosts:
+        if host not in seen:
+            unique_hosts.append(host)
+            seen.add(host)
+    return unique_hosts
+
+
+def _build_csrf_trusted_origins(allowed_hosts):
+    """Build CSRF trusted origins for HTTPS deployments and custom domains."""
+    configured = [origin.strip() for origin in _csv_env(os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '')) if origin.strip()]
+    if configured:
+        return configured
+
+    origins = []
+    for host in allowed_hosts:
+        if host in {'localhost', '127.0.0.1'}:
+            continue
+        origins.append(f'https://{host}')
+    return origins
+
+
+ALLOWED_HOSTS = _build_allowed_hosts()
+CSRF_TRUSTED_ORIGINS = _build_csrf_trusted_origins(ALLOWED_HOSTS)
 
 
 # Application definition
