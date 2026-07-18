@@ -86,10 +86,7 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.mauritshuis.nl/en/our-collection/artworks/670-girl-with-a-pearl-earring/",
         "video_url": "https://www.youtube.com/watch?v=aNSfmxSP5Oo",
-        "image_url": (
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/"
-            "1665_Girl_with_a_Pearl_Earring.jpg/800px-1665_Girl_with_a_Pearl_Earring.jpg"
-        ),
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/1665_Girl_with_a_Pearl_Earring.jpg",
         "qr_identifier": 1002,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 3, 1, 10, 0, 0)),
     },
@@ -212,11 +209,7 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.neuegalerie.org/collection/austrian-art/klimt",
         "video_url": "https://www.youtube.com/watch?v=mA0MtVDOOI0",
-        "image_url": (
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/"
-            "Klimt_-_Portrait_of_Adele_Bloch-Bauer_I.jpg/800px-"
-            "Klimt_-_Portrait_of_Adele_Bloch-Bauer_I.jpg"
-        ),
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/84/Gustav_Klimt_046.jpg",
         "qr_identifier": 1005,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 4, 15, 10, 0, 0)),
     },
@@ -295,11 +288,7 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.nationalgallery.org.uk/paintings/joseph-mallord-william-turner-the-fighting-temeraire",
         "video_url": "https://www.youtube.com/watch?v=GBxHt44kDYY",
-        "image_url": (
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/"
-            "The_Fighting_Temeraire%2C_JMW_Turner%2C_National_Gallery.jpg/1280px-"
-            "The_Fighting_Temeraire%2C_JMW_Turner%2C_National_Gallery.jpg"
-        ),
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/30/The_Fighting_Temeraire%2C_JMW_Turner%2C_National_Gallery.jpg",
         "qr_identifier": 1007,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 5, 10, 10, 0, 0)),
     },
@@ -336,11 +325,7 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.tate.org.uk/art/artworks/millais-ophelia-n01506",
         "video_url": "https://www.youtube.com/watch?v=dPZ2ERxzFqg",
-        "image_url": (
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/"
-            "John_Everett_Millais_-_Ophelia_-_Google_Art_Project.jpg/1280px-"
-            "John_Everett_Millais_-_Ophelia_-_Google_Art_Project.jpg"
-        ),
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/9/94/John_Everett_Millais_-_Ophelia_-_Google_Art_Project.jpg",
         "qr_identifier": 1008,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 5, 10, 10, 0, 0)),
     },
@@ -420,7 +405,7 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.moma.org/collection/works/79878",
         "video_url": "https://www.youtube.com/watch?v=ItOGcuFJqvc",
-        "image_url": "https://upload.wikimedia.org/wikipedia/en/d/dd/The_Persistence_of_Memory.jpg",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/39/N%C2%BA_24_%28Brown%2C_Black_and_Blue%29%2C_Mark_Rothko%2C_Paintings_in_the_San_Francisco_Museum_of_Modern_Art%2C_SFMOMA_12.jpg",
         "qr_identifier": 1010,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 6, 1, 10, 0, 0)),
     },
@@ -505,23 +490,31 @@ class Command(BaseCommand):
                 },
             )
 
+            exhibit_defaults = {
+                'gallery_name': 'Hargreaves Fine Art',
+                'show': show,
+                'artwork': artwork,
+                'price': data['price'],
+                'currency': data['currency'],
+                'tldr': data['tldr'],
+                'full_text': data['full_text'],
+                'audio_url': data['audio_url'],
+                'video_url': data['video_url'],
+                'image_url': data['image_url'],
+                'publish_date': data['publish_date'],
+                'user': user,
+            }
+
+            # Use qr_identifier as the stable idempotency key to avoid unique-key collisions.
             exhibit, created = Exhibit.objects.get_or_create(
-                artwork=artwork,
-                show=show,
-                defaults={
-                    'gallery_name': 'Hargreaves Fine Art',
-                    'price': data['price'],
-                    'currency': data['currency'],
-                    'tldr': data['tldr'],
-                    'full_text': data['full_text'],
-                    'audio_url': data['audio_url'],
-                    'video_url': data['video_url'],
-                    'image_url': data['image_url'],
-                    'qr_identifier': data['qr_identifier'],
-                    'publish_date': data['publish_date'],
-                    'user': user,
-                },
+                qr_identifier=data['qr_identifier'],
+                defaults=exhibit_defaults,
             )
+
+            if not created:
+                for field_name, field_value in exhibit_defaults.items():
+                    setattr(exhibit, field_name, field_value)
+                exhibit.save()
             if created:
                 created_count += 1
                 self.stdout.write(f"  ✓ Created: {exhibit}")
