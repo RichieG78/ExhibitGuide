@@ -14,19 +14,48 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load local environment variables from .env when present.
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-b_civ52+_p#wg-=63tig8ewt8-(%fxe^(4nsx24blvokw(b+&x'
+def _bool_env(name, default=False):
+    """Parse a boolean environment variable from common true/false strings."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def _int_env(name, default):
+    """Parse an integer environment variable with a safe fallback."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _bool_env('DJANGO_DEBUG', _bool_env('DEBUG', False))
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', '').strip()
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'dev-only-secret-key-set-DJANGO_SECRET_KEY-in-.env'
+    else:
+        raise ImproperlyConfigured('DJANGO_SECRET_KEY must be set when DEBUG is False')
 
 
 def _csv_env(value):
@@ -35,7 +64,7 @@ def _csv_env(value):
 
 
 ALLOWED_HOSTS = _csv_env(
-    os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,exhibitguide.onrender.com')
+    os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
 )
 
 
@@ -95,9 +124,19 @@ DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
         conn_max_age=600,
-        ssl_require=not DEBUG,
+        ssl_require=_bool_env('DJANGO_DB_SSL_REQUIRE', not DEBUG),
     )
 }
+
+
+# Security settings: strict defaults for production, relaxed defaults for local development.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = _bool_env('DJANGO_SECURE_SSL_REDIRECT', not DEBUG)
+SESSION_COOKIE_SECURE = _bool_env('DJANGO_SESSION_COOKIE_SECURE', not DEBUG)
+CSRF_COOKIE_SECURE = _bool_env('DJANGO_CSRF_COOKIE_SECURE', not DEBUG)
+SECURE_HSTS_SECONDS = _int_env('DJANGO_SECURE_HSTS_SECONDS', 31536000 if not DEBUG else 0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _bool_env('DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', not DEBUG)
+SECURE_HSTS_PRELOAD = _bool_env('DJANGO_SECURE_HSTS_PRELOAD', not DEBUG)
 
 
 # Password validation
