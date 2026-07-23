@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load local environment variables from .env when present.
+# This keeps secrets/config out of source control while preserving easy local setup.
 load_dotenv(BASE_DIR / '.env')
 
 
@@ -172,6 +173,7 @@ WSGI_APPLICATION = 'exhibit_guide_pwa.wsgi.application'
 
 # Use Postgres when DATABASE_URL is set (e.g. on Render), otherwise fall back
 # to local SQLite. No flags to toggle — presence of DATABASE_URL decides.
+# This supports a single settings module for both local and hosted environments.
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',

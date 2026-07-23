@@ -120,6 +120,19 @@ class UsersViewStabilityTests(UsersFixtureMixin, TestCase):
 		self.assertEqual(response.status_code, 302)
 		self.assertIn(reverse('login'), response.url)
 
+	def test_dashboard_requires_login(self):
+		response = self.client.get(reverse('dashboard'))
+		self.assertEqual(response.status_code, 302)
+		self.assertIn(reverse('login'), response.url)
+
+	def test_admin_index_rejects_non_staff_user(self):
+		self.client.login(username=self.user.username, password='pw123456')
+
+		response = self.client.get(reverse('admin:index'))
+
+		self.assertEqual(response.status_code, 302)
+		self.assertIn('/admin/login/', response.url)
+
 	def test_profile_get_creates_profile_and_prefills_names(self):
 		self.user.first_name = 'Grace'
 		self.user.last_name = 'Hopper'
