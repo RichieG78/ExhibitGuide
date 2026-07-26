@@ -171,12 +171,26 @@ WSGI_APPLICATION = 'exhibit_guide_pwa.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Use Postgres when DATABASE_URL is set (e.g. on Render), otherwise fall back
-# to local SQLite. No flags to toggle — presence of DATABASE_URL decides.
-# This supports a single settings module for both local and hosted environments.
+# Database selection strategy:
+# - Local/DEBUG mode defaults to SQLite.
+# - Optional local Postgres can be enabled with DJANGO_LOCAL_DATABASE_URL.
+# - Production mode uses DJANGO_PRODUCTION_DATABASE_URL when set.
+# - For compatibility with hosts like Render, production falls back to DATABASE_URL.
+def _database_url_for_current_mode():
+    sqlite_default = f'sqlite:///{BASE_DIR / "db.sqlite3"}'
+    local_database_url = os.getenv('DJANGO_LOCAL_DATABASE_URL', '').strip()
+    production_database_url = os.getenv('DJANGO_PRODUCTION_DATABASE_URL', '').strip()
+    legacy_database_url = os.getenv('DATABASE_URL', '').strip()
+
+    if DEBUG:
+        return local_database_url or sqlite_default
+
+    return production_database_url or legacy_database_url or sqlite_default
+
+
 DATABASES = {
     'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        default=_database_url_for_current_mode(),
         conn_max_age=600,
         ssl_require=_bool_env('DJANGO_DB_SSL_REQUIRE', not DEBUG),
     )
