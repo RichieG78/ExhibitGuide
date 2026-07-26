@@ -11,6 +11,51 @@ It provides:
 
 This README is written as a technical assessment and handover guide. It maps implementation evidence to the published requirements and rubric language.
 
+## Two Versions of ExhibitGuide — Read First
+This repository contains **two separate versions** of ExhibitGuide, maintained on **two branches**. They can be assessed **independently**.
+
+| | Version 1 — Original | Version 2 — React + Django REST |
+|---|---|---|
+| **Branch** | `main` | `react-and-rest-version` |
+| **Architecture** | Django monorepo, server-rendered templates | Decoupled: Django REST API + React frontend |
+| **Django folder** | `exhibit_guide_pwa/` | `backend/` |
+| **Frontend** | Django templates + Bootstrap (`crispy_forms`) | Separate `frontend/` React app (Vite) |
+| **Hosted URL** | `https://exhibitguide.onrender.com` | *(separate Render instance — link to be added)* |
+| **Status** | Complete — assess using this README | In active development |
+
+### Assessing Version 1 (Original Django app) — branch `main`
+This is the version documented in full by the rest of this README. To run it locally:
+
+```bash
+git checkout main
+pip install -r requirements.txt          # requirements.txt is at the repo root on main
+cd exhibit_guide_pwa
+python manage.py migrate
+python manage.py runserver               # app at http://localhost:8000
+```
+
+See **Local Setup** below for environment variables (for example `DJANGO_DEBUG=True` and `DJANGO_SECRET_KEY`). Then follow the **Assessor Quick Start** personas below, or use the hosted URL above.
+
+### Assessing Version 2 (React + Django REST) — branch `react-and-rest-version`
+> **In active development.** The Django REST API lives in `backend/` and the React frontend in `frontend/`. When complete, it runs as two processes:
+
+```bash
+git checkout react-and-rest-version
+
+# Terminal 1 — Django REST API
+cd backend
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver               # API at http://localhost:8000
+
+# Terminal 2 — React frontend
+cd frontend
+npm install
+npm run dev                              # UI at http://localhost:5173
+```
+
+A dedicated hosted URL (separate Render instance) will be added here once deployed. **Until this section is marked complete, please grade Version 1.**
+
 ## Assessor Quick Start (Recommended Test Order)
 This section is designed for first-time assessors.
 
