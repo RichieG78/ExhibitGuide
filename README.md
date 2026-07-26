@@ -98,17 +98,17 @@ Expected outcome:
 - Project brief and requirements framing: `Research/ExhibitGuide_Project_Brief.pdf`
 - UX wireframes for scan and visitor flow: `Research/ExhibitGuide Scan Flow Wireframes.html`
 - Pitch context and product framing: `Research/ExhibitGuide Pitch Deck.html`
-- Core domain models: `exhibit_guide_pwa/exhibits/models.py`
-- User activity and inquiry models: `exhibit_guide_pwa/users/models.py`
-- Public exhibit flow implementation: `exhibit_guide_pwa/exhibits/views.py`
-- Authentication + dashboard implementation: `exhibit_guide_pwa/users/views.py`
-- Route design and URL architecture: `exhibit_guide_pwa/exhibit_guide_pwa/urls.py`, `exhibit_guide_pwa/exhibits/urls.py`
-- Workflow tests and endpoint coverage: `exhibit_guide_pwa/users/tests.py`, `exhibit_guide_pwa/exhibits/tests.py`
+- Core domain models: `backend/exhibits/models.py`
+- User activity and inquiry models: `backend/users/models.py`
+- Public exhibit flow implementation: `backend/exhibits/views.py`
+- Authentication + dashboard implementation: `backend/users/views.py`
+- Route design and URL architecture: `backend/exhibit_guide_pwa/urls.py`, `backend/exhibits/urls.py`
+- Workflow tests and endpoint coverage: `backend/users/tests.py`, `backend/exhibits/tests.py`
 
 ## Submission Structure and Tidy-Up
 To demonstrate clean submission hygiene, this project applies the following checks:
 
-- Keep one primary Django project/app path for assessment (`exhibit_guide_pwa/`) and avoid duplicate copy folders.
+- Keep one primary Django project/app path for assessment (`backend/`) and avoid duplicate copy folders.
 - Keep exploratory notebooks out of submission roots unless they are explicitly required evidence.
 - Exclude backup directories from tracked submission content.
 - Keep generated/static artifact directories out of assessment focus unless required by deployment checks.
@@ -198,15 +198,15 @@ This sequence is intended to evidence iterative development from first problem f
 
 ### Django Implementation Details (How and Where)
 Database integration in Django:
-- Domain schema is defined in `exhibit_guide_pwa/exhibits/models.py` (`Artist`, `Artwork`, `Show`, `Exhibit`).
-- User interaction schema is defined in `exhibit_guide_pwa/users/models.py` (`SavedExhibit`, `SavedCollection`, `GalleryInquiry`, `Prospect`, `UserProfile`).
+- Domain schema is defined in `backend/exhibits/models.py` (`Artist`, `Artwork`, `Show`, `Exhibit`).
+- User interaction schema is defined in `backend/users/models.py` (`SavedExhibit`, `SavedCollection`, `GalleryInquiry`, `Prospect`, `UserProfile`).
 - Relationships use ORM foreign keys and many-to-many fields to enforce data integrity and simplify query logic.
 
 Authentication and authorization in Django:
-- Registration uses `UserCreationForm` in `exhibit_guide_pwa/users/forms.py` and `register` view in `exhibit_guide_pwa/users/views.py`.
-- Login uses Django `AuthenticationForm` in `exhibit_guide_pwa/users/views.py`.
-- Route-level access control is handled with `@login_required` for protected pages such as dashboard/profile in `exhibit_guide_pwa/users/views.py`.
-- Password reset is provided by Django auth views wired in `exhibit_guide_pwa/exhibit_guide_pwa/urls.py`.
+- Registration uses `UserCreationForm` in `backend/users/forms.py` and `register` view in `backend/users/views.py`.
+- Login uses Django `AuthenticationForm` in `backend/users/views.py`.
+- Route-level access control is handled with `@login_required` for protected pages such as dashboard/profile in `backend/users/views.py`.
+- Password reset is provided by Django auth views wired in `backend/exhibit_guide_pwa/urls.py`.
 
 Code snippet (auth + protected route pattern):
 
@@ -240,10 +240,10 @@ Authorization requirement at inception:
 - admin-only users should manage CMS content and enquiries in Django admin.
 
 ### Implementation Timeline (How)
-1. Added registration/login/logout flow in `exhibit_guide_pwa/users/views.py` using Django auth forms.
+1. Added registration/login/logout flow in `backend/users/views.py` using Django auth forms.
 2. Added protected user routes for dashboard/profile using `@login_required`.
 3. Preserved scan context through auth handoff via session key `interest_exhibit_id`.
-4. Wired Django password-reset views in `exhibit_guide_pwa/exhibit_guide_pwa/urls.py`.
+4. Wired Django password-reset views in `backend/exhibit_guide_pwa/urls.py`.
 5. Confirmed admin authorization boundary through Django admin access behavior.
 
 ### Authentication and Authorization Architecture (What Django Provides)
@@ -267,10 +267,10 @@ Role/access matrix in this project:
 
 ### Tested Endpoints and Evidence
 Key authentication/authorization tests now included:
-1. `test_profile_requires_login` in `exhibit_guide_pwa/users/tests.py`.
-2. `test_dashboard_requires_login` in `exhibit_guide_pwa/users/tests.py`.
-3. `test_login_honors_next_parameter` in `exhibit_guide_pwa/users/tests.py`.
-4. `test_admin_index_rejects_non_staff_user` in `exhibit_guide_pwa/users/tests.py`.
+1. `test_profile_requires_login` in `backend/users/tests.py`.
+2. `test_dashboard_requires_login` in `backend/users/tests.py`.
+3. `test_login_honors_next_parameter` in `backend/users/tests.py`.
+4. `test_admin_index_rejects_non_staff_user` in `backend/users/tests.py`.
 
 These tests provide direct evidence that:
 - protected routes cannot be accessed anonymously,
@@ -302,7 +302,7 @@ Design intent:
 - Predictable QR addressing: `Exhibit.save()` auto-generates `qr_identifier` once persisted, creating stable public links.
 
 ## Database Integration Playbook (SQLite, Local Postgres, Connected Postgres)
-This project uses environment-based database switching via `DATABASE_URL` in `exhibit_guide_pwa/exhibit_guide_pwa/settings.py`.
+This project uses environment-based database switching via `DATABASE_URL` in `backend/exhibit_guide_pwa/settings.py`.
 
 How switching works:
 - If `DATABASE_URL` is present, Django uses that database (typically PostgreSQL in production).
@@ -317,8 +317,8 @@ Use when:
 Commands:
 
 ```bash
-cd exhibit_guide_pwa
-export DATABASE_URL="sqlite:////absolute/path/to/exhibit_guide_pwa/db.sqlite3"
+cd backend
+export DATABASE_URL="sqlite:////absolute/path/to/backend/db.sqlite3"
 /absolute/path/to/venv/bin/python manage.py migrate
 /absolute/path/to/venv/bin/python manage.py runserver
 ```
@@ -345,7 +345,7 @@ export DATABASE_URL="postgres://exhibitguide_app:change-this-password@127.0.0.1:
 3. Run migrations/app:
 
 ```bash
-cd exhibit_guide_pwa
+cd backend
 /absolute/path/to/venv/bin/python manage.py migrate
 /absolute/path/to/venv/bin/python manage.py runserver
 ```
@@ -379,7 +379,7 @@ What the developer remains responsible for:
 - diagnosing connection issues (DNS, SSL mode, firewall/network policy).
 
 Evidence in this repository:
-- environment-driven DB selection: `exhibit_guide_pwa/exhibit_guide_pwa/settings.py`
+- environment-driven DB selection: `backend/exhibit_guide_pwa/settings.py`
 - deploy-oriented dependencies/config: `requirements.txt`, `runtime.txt`
 
 ## settings.py Environment Logic (How, Why, Local Testing)
@@ -525,15 +525,15 @@ These tests were selected to verify high-value business behavior and data integr
 Run all tests with a deterministic local SQLite database:
 
 ```bash
-cd exhibit_guide_pwa
-DATABASE_URL=sqlite:////absolute/path/to/exhibit_guide_pwa/db.sqlite3 /absolute/path/to/venv/bin/python manage.py test
+cd backend
+DATABASE_URL=sqlite:////absolute/path/to/backend/db.sqlite3 /absolute/path/to/venv/bin/python manage.py test
 ```
 
 Run focused suites used for assessment demonstration:
 
 ```bash
-cd exhibit_guide_pwa
-DATABASE_URL=sqlite:////absolute/path/to/exhibit_guide_pwa/db.sqlite3 /absolute/path/to/venv/bin/python manage.py test users.tests exhibits.tests
+cd backend
+DATABASE_URL=sqlite:////absolute/path/to/backend/db.sqlite3 /absolute/path/to/venv/bin/python manage.py test users.tests exhibits.tests
 ```
 
 PostgreSQL local test note:
@@ -571,7 +571,7 @@ export DATABASE_URL="postgres://exhibitguide_test:change-this-password@127.0.0.1
 4. Run tests.
 
 ```bash
-cd exhibit_guide_pwa
+cd backend
 /absolute/path/to/venv/bin/python manage.py test
 ```
 
@@ -585,10 +585,10 @@ Troubleshooting checklist for assessor local Postgres failures:
 ## Local Setup (Developer Reproducibility Sequence)
 1. Clone the repository and open the project root.
 2. Create and activate a virtual environment.
-3. Install dependencies:
+3. Install dependencies (the requirements file lives in the `backend/` folder):
 
 ```bash
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 ```
 
 4. Choose a database mode:
@@ -598,7 +598,7 @@ pip install -r requirements.txt
 5. Run migrations:
 
 ```bash
-cd exhibit_guide_pwa
+cd backend
 python manage.py migrate
 ```
 
@@ -625,26 +625,30 @@ python manage.py runserver
 
 ## Deployment Runbook (Render)
 1. Create a Render Postgres instance.
-2. Create a Render Web Service connected to this repository.
-3. Configure build and start commands:
+2. Create a Render Web Service connected to this repository (deploy from the relevant branch).
+3. Set the service's **Root Directory** to `backend` — in this monorepo layout the Django project (with `manage.py` and `requirements.txt`) lives there, alongside the separate `frontend/` React app.
+4. Configure the commands (all run relative to the `backend/` root directory):
 
 ```bash
 # Build Command
-pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+pip install -r requirements.txt && python manage.py collectstatic --noinput
+
+# Pre-Deploy Command (runs after build, before the new version goes live)
+python manage.py migrate
 
 # Start Command
 gunicorn exhibit_guide_pwa.wsgi:application
 ```
 
-4. Set required environment variables in Render:
+5. Set required environment variables in Render:
 - `DJANGO_SECRET_KEY`
 - `DJANGO_DEBUG=false`
 - `DATABASE_URL` (from Render Postgres)
 - `DJANGO_ALLOWED_HOSTS` (include your Render hostname)
 - `DJANGO_CSRF_TRUSTED_ORIGINS` (https origin for hosted domain)
 
-5. Deploy and wait for successful build/start logs.
-6. Open the hosted URL and execute the Hosted Accessibility Evidence run-through.
+6. Deploy and wait for successful build/start logs.
+7. Open the hosted URL and execute the Hosted Accessibility Evidence run-through.
 
 Notes:
 - `whitenoise`, `gunicorn`, and `dj-database-url` are already configured in this repository.
