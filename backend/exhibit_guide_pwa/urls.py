@@ -47,6 +47,8 @@ urlpatterns = [
     ),
     # Public scan and exhibit pages live under /exhibits/.
     path('exhibits/', include('exhibits.urls')),
+    # REST API endpoints (React frontend) live under /api/.
+    path('api/', include('exhibits.api_urls')),
 ]
 
 if settings.DEBUG:
