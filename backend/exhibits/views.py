@@ -3,8 +3,13 @@
 from django.shortcuts import get_object_or_404, render
 from rest_framework import viewsets
 
-from .models import Exhibit
-from .serializers import ExhibitSerializer
+from .models import Artist, Artwork, Exhibit, Show
+from .serializers import (
+	ArtistSerializer,
+	ArtworkSerializer,
+	ExhibitSerializer,
+	ShowSerializer,
+)
 
 
 def scan_view(request):
@@ -41,3 +46,25 @@ class ExhibitViewSet(viewsets.ReadOnlyModelViewSet):
 		Exhibit.objects.select_related('artwork', 'artwork__artist', 'show')
 		.order_by('-publish_date')
 	)
+
+
+class ArtistViewSet(viewsets.ReadOnlyModelViewSet):
+	"""Read-only REST API endpoints for artists (list + detail)."""
+
+	serializer_class = ArtistSerializer
+	queryset = Artist.objects.order_by('lastname', 'firstname')
+
+
+class ArtworkViewSet(viewsets.ReadOnlyModelViewSet):
+	"""Read-only REST API endpoints for artworks (list + detail)."""
+
+	serializer_class = ArtworkSerializer
+	# Pre-fetch the linked artist so `artist_name` doesn't add a query per row.
+	queryset = Artwork.objects.select_related('artist').order_by('title')
+
+
+class ShowViewSet(viewsets.ReadOnlyModelViewSet):
+	"""Read-only REST API endpoints for shows (list + detail)."""
+
+	serializer_class = ShowSerializer
+	queryset = Show.objects.order_by('show_name')
