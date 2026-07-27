@@ -49,9 +49,13 @@
   color: var(--muted);
   font-size: 0.95rem;
 }
-.list-scan-link {
-  display: inline-block;
+.list-links {
   margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.list-scan-link {
   color: var(--accent);
   font-size: 0.85rem;
   font-weight: 600;

@@ -3,6 +3,7 @@ import './App.css'
 import ExhibitList from './ExhibitList'
 import ExhibitDetail from './ExhibitDetail'
 import ScanScreen from './ScanScreen'
+import Dashboard from './Dashboard'
 
 // Small wrapper: pulls the :id out of the URL and hands it to ExhibitDetail,
 // keeping ExhibitDetail itself a plain, reusable id-driven component.
@@ -18,6 +19,7 @@ function App() {
       <Route path="/exhibits/:id" element={<ExhibitDetailRoute />} />
       <Route path="/scan" element={<ScanScreen />} />
       <Route path="/scan/:id" element={<ScanScreen />} />
+      <Route path="/dashboard" element={<Dashboard />} />
     </Routes>
   )
 }
