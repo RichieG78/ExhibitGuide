@@ -49,6 +49,8 @@ urlpatterns = [
     path('exhibits/', include('exhibits.urls')),
     # REST API endpoints (React frontend) live under /api/.
     path('api/', include('exhibits.api_urls')),
+    # Auth + per-user collector API (JWT).
+    path('api/', include('users.api_urls')),
 ]
 
 if settings.DEBUG:

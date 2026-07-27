@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from './AuthContext'
 import ExhibitImage from './ExhibitImage'
 import InterestModal from './InterestModal'
 import './ExhibitDetail.css'
@@ -49,6 +50,7 @@ function formatTime(seconds) {
 }
 
 function ExhibitDetail({ id }) {
+  const { user, authFetch } = useAuth()
   const [exhibit, setExhibit] = useState(null)
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [error, setError] = useState('')
@@ -59,6 +61,7 @@ function ExhibitDetail({ id }) {
   const [notice, setNotice] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [dwellStart] = useState(() => Date.now()) // for the dwell_time metric
   const audioRef = useRef(null)
 
@@ -107,6 +110,16 @@ function ExhibitDetail({ id }) {
       el.pause()
       setPlaying(false)
     }
+  }
+
+  const saveToWatchlist = () => {
+    authFetch('/api/saved/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ exhibit: exhibit.id }),
+    }).then((res) => {
+      if (res.ok) setSaved(true)
+    })
   }
 
   return (
@@ -217,6 +230,16 @@ function ExhibitDetail({ id }) {
           <button className="btn-secondary" type="button" onClick={() => setNotice('Price list requests open in a later phase.')}>
             Request Price List
           </button>
+          {user &&
+            (saved ? (
+              <Link to="/dashboard" className="btn-secondary detail-saved-link">
+                ✓ Saved — view your collection
+              </Link>
+            ) : (
+              <button className="btn-secondary" type="button" onClick={saveToWatchlist}>
+                + Save to watchlist
+              </button>
+            ))}
           {notice && <p className="detail-notice">{notice}</p>}
         </div>
 

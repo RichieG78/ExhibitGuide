@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import './InterestModal.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -84,7 +85,7 @@ function InterestModal({ exhibit, dwellStart, onClose, onSuccess }) {
         {error && <p className="modal-error">{error}</p>}
 
         <p className="modal-signin">
-          or <span className="modal-signin__link">sign in</span> · Google · Apple
+          or <Link to="/login" className="modal-signin__link">sign in</Link> · Google · Apple
         </p>
       </div>
     </div>

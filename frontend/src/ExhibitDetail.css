@@ -300,6 +300,11 @@
 .btn-secondary:hover {
   background: var(--surface-warm);
 }
+.detail-saved-link {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
 .detail-notice {
   margin: 4px 2px 0;
   font-size: 12px;

@@ -45,6 +45,7 @@
   height: 32px;
   border-radius: 16px;
   border: 1px solid var(--dash-gold);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -52,6 +53,7 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--dash-gold-light);
+  cursor: pointer;
 }
 
 /* Greeting */
@@ -191,6 +193,22 @@
 }
 .dash-enquire:hover {
   background: rgba(107, 79, 42, 0.2);
+}
+.dash-enquired {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dash-gold-light);
+}
+.dash-linkbtn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--dash-gold-light);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 .dash-divider {
   height: 1px;

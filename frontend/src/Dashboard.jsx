@@ -1,17 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from './AuthContext'
 import ExhibitImage from './ExhibitImage'
-import InterestModal from './InterestModal'
 import './Dashboard.css'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
-// Demo only: this screen is a logged-in collector's watchlist. Until auth +
-// per-user saved-exhibit APIs exist (Phase 7), we feature real exhibits with
-// simulated statuses and a demo collector name.
-const DEMO_USER = 'Alastair Hargreaves'
 const FILTERS = ['All', 'Watching', 'Enquired', 'Acquired']
-const STATUS_CYCLE = ['Watching', 'Enquired', 'Watching', 'Acquired']
 
 const IconBack = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
@@ -28,69 +21,76 @@ const IconCompass = () => (
 const IconBookmark = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" /></svg>
 )
-const IconUser = () => (
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>
+const IconLogout = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3M10 17l-5-5 5-5M5 12h11" /></svg>
 )
 
 function Dashboard() {
   const navigate = useNavigate()
+  const { user, authFetch, logout } = useAuth()
   const [items, setItems] = useState([])
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('All')
-  const [modalExhibit, setModalExhibit] = useState(null)
 
-  useEffect(() => {
-    fetch(`${API_BASE}/api/exhibits/`)
-      .then((response) => {
-        if (!response.ok) throw new Error(`API responded with ${response.status}`)
-        return response.json()
+  const load = useCallback(() => {
+    setStatus('loading')
+    authFetch('/api/collection/')
+      .then((res) => {
+        if (!res.ok) throw new Error(`Error ${res.status}`)
+        return res.json()
       })
       .then((data) => {
-        setItems(
-          data.map((exhibit, i) => ({
-            ...exhibit,
-            demoStatus: STATUS_CYCLE[i % STATUS_CYCLE.length],
-          }))
-        )
+        setItems(data)
         setStatus('ready')
       })
       .catch((err) => {
         setError(err.message)
         setStatus('error')
       })
-  }, [])
+  }, [authFetch])
 
-  const visible =
-    filter === 'All' ? items : items.filter((it) => it.demoStatus === filter)
+  useEffect(() => {
+    load()
+  }, [load])
 
-  const markEnquired = (id) => {
-    setItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, demoStatus: 'Enquired' } : it))
-    )
+  const visible = filter === 'All' ? items : items.filter((it) => it.status === filter.toLowerCase())
+
+  const enquire = (id) => {
+    authFetch('/api/inquiries/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ exhibit: id }),
+    }).then((res) => {
+      if (res.ok) load()
+    })
   }
+
+  const doLogout = () => {
+    logout()
+    navigate('/')
+  }
+
+  const displayName = user?.username || 'Collector'
 
   return (
     <div className="dashboard">
-      {/* Top nav */}
       <header className="dash-topnav">
         <button className="dash-iconbtn" type="button" onClick={() => navigate('/')} aria-label="Back">
           <IconBack />
         </button>
         <span className="dash-topnav__title">Saved Exhibits</span>
-        <span className="dash-avatar" aria-hidden="true">
-          {DEMO_USER.split(' ').map((w) => w[0]).join('')}
-        </span>
+        <button className="dash-avatar" type="button" onClick={doLogout} title="Log out" aria-label="Log out">
+          {displayName.slice(0, 2).toUpperCase()}
+        </button>
       </header>
 
-      {/* Greeting */}
       <section className="dash-greeting">
         <p className="dash-eyebrow">Welcome Back</p>
-        <h1 className="dash-name">{DEMO_USER}</h1>
+        <h1 className="dash-name">{displayName}</h1>
         <p className="dash-subtitle">Pieces you've expressed interest in</p>
       </section>
 
-      {/* Filters */}
       <div className="dash-filters">
         {FILTERS.map((f) => (
           <button
@@ -104,11 +104,16 @@ function Dashboard() {
         ))}
       </div>
 
-      {/* Feed */}
       <div className="dash-feed">
         {status === 'loading' && <p className="dash-status">Loading your collection…</p>}
         {status === 'error' && <p className="dash-status">Could not load: {error}</p>}
-        {status === 'ready' && visible.length === 0 && (
+        {status === 'ready' && items.length === 0 && (
+          <p className="dash-status">
+            You haven't saved any works yet.{' '}
+            <button className="dash-linkbtn" type="button" onClick={() => navigate('/')}>Browse the gallery →</button>
+          </p>
+        )}
+        {status === 'ready' && items.length > 0 && visible.length === 0 && (
           <p className="dash-status">Nothing {filter.toLowerCase()} yet.</p>
         )}
 
@@ -126,41 +131,32 @@ function Dashboard() {
                 <IconArrowRight />
               </button>
             </div>
-            <span className="dash-tag">{item.demoStatus}</span>
+            <span className="dash-tag">{item.status}</span>
             <div>
-              <button className="dash-enquire" type="button" onClick={() => setModalExhibit(item)}>
-                Enquire
-              </button>
+              {item.status === 'enquired' ? (
+                <span className="dash-enquired">Enquired ✓</span>
+              ) : (
+                <button className="dash-enquire" type="button" onClick={() => enquire(item.id)}>
+                  Enquire
+                </button>
+              )}
             </div>
             <div className="dash-divider" />
           </article>
         ))}
       </div>
 
-      {/* Bottom nav */}
       <nav className="dash-bottomnav">
-        <button className="dash-contact" type="button" onClick={() => setModalExhibit(items[0] || null)}>
+        <button className="dash-contact" type="button" onClick={() => navigate('/')}>
           Contact Gallery
         </button>
         <div className="dash-navpill">
           <button className="dash-navitem dash-navitem--active" type="button" onClick={() => navigate('/')} aria-label="Home"><IconHome /></button>
-          <button className="dash-navitem" type="button" aria-label="Explore"><IconCompass /></button>
+          <button className="dash-navitem" type="button" onClick={() => navigate('/')} aria-label="Explore"><IconCompass /></button>
           <button className="dash-navitem" type="button" aria-label="Saved"><IconBookmark /></button>
-          <button className="dash-navitem" type="button" aria-label="Profile"><IconUser /></button>
+          <button className="dash-navitem" type="button" onClick={doLogout} aria-label="Log out"><IconLogout /></button>
         </div>
       </nav>
-
-      {modalExhibit && (
-        <InterestModal
-          exhibit={modalExhibit}
-          dwellStart={null}
-          onClose={() => setModalExhibit(null)}
-          onSuccess={() => {
-            markEnquired(modalExhibit.id)
-            setModalExhibit(null)
-          }}
-        />
-      )}
     </div>
   )
 }
