@@ -287,3 +287,4 @@ LOGIN_URL = '/admin/login/'
 
 EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = os.getenv('DJANGO_DEFAULT_FROM_EMAIL', 'noreply@exhibitguide.local')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')

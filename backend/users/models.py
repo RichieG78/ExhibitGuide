@@ -59,9 +59,9 @@ class UserProfile(models.Model):
             return
 
         image_file = Image.open(self.image.path)
-        if image_file.height > 600 or image_file.width > 600:
+        if image_file.height > 300 or image_file.width > 300:
             # Resize in place so uploaded profile pictures stay lightweight.
-            image_file.thumbnail((600, 600))
+            image_file.thumbnail((300, 300))
             image_file.save(self.image.path)
 
     def __str__(self):

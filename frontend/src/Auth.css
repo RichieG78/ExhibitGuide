@@ -61,10 +61,32 @@
   border-color: var(--accent);
 }
 
+.auth-textarea {
+  min-height: 108px;
+  padding: 10px 14px;
+  background: #fafaf9;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--ink);
+  resize: vertical;
+}
+.auth-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .auth-error {
   margin: 0 0 14px;
   font-size: 0.82rem;
   color: #b00020;
+}
+
+.auth-success {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  color: #135f1f;
 }
 
 .auth-submit {
@@ -94,7 +116,26 @@
   font-size: 0.88rem;
   color: var(--muted);
 }
+.auth-alt--compact {
+  margin-top: 12px;
+}
 .auth-alt a {
   color: var(--accent);
   font-weight: 600;
+}
+
+.auth-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.auth-linkbtn {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
 }

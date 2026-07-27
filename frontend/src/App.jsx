@@ -6,6 +6,9 @@ import ScanScreen from './ScanScreen'
 import Dashboard from './Dashboard'
 import LoginPage from './LoginPage'
 import RegisterPage from './RegisterPage'
+import PasswordResetRequestPage from './PasswordResetRequestPage'
+import PasswordResetConfirmPage from './PasswordResetConfirmPage'
+import ProfilePage from './ProfilePage'
 import RequireAuth from './RequireAuth'
 import RequireStaff from './RequireStaff'
 import ManageExhibits from './ManageExhibits'
@@ -27,11 +30,21 @@ function App() {
       <Route path="/scan/:id" element={<ScanScreen />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/password-reset" element={<PasswordResetRequestPage />} />
+      <Route path="/reset-password" element={<PasswordResetConfirmPage />} />
       <Route
         path="/dashboard"
         element={
           <RequireAuth>
             <Dashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <RequireAuth>
+            <ProfilePage />
           </RequireAuth>
         }
       />

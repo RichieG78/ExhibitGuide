@@ -80,7 +80,7 @@ function Dashboard() {
           <IconBack />
         </button>
         <span className="dash-topnav__title">Saved Exhibits</span>
-        <button className="dash-avatar" type="button" onClick={doLogout} title="Log out" aria-label="Log out">
+        <button className="dash-avatar" type="button" onClick={() => navigate('/profile')} title="Profile" aria-label="Profile">
           {displayName.slice(0, 2).toUpperCase()}
         </button>
       </header>

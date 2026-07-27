@@ -2,6 +2,8 @@
 
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
 from rest_framework import serializers
 
 from exhibits.serializers import ExhibitSerializer
@@ -72,3 +74,97 @@ class InquirySerializer(serializers.ModelSerializer):
         model = GalleryInquiry
         fields = ['id', 'exhibit', 'message', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+
+class ProfileSerializer(serializers.Serializer):
+    """Read/write shape for profile management in the React app."""
+
+    username = serializers.CharField(required=False, max_length=150)
+    email = serializers.EmailField(required=False)
+    first_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    last_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    phone = serializers.CharField(required=False, allow_blank=True, max_length=30)
+    bio = serializers.CharField(required=False, allow_blank=True)
+
+    def to_representation(self, profile):
+        user = profile.user
+        return {
+            'username': user.username,
+            'email': user.email,
+            'first_name': profile.firstname or user.first_name,
+            'last_name': profile.lastname or user.last_name,
+            'phone': profile.phone,
+            'bio': profile.bio,
+            'image_url': profile.image.url if profile.image else None,
+        }
+
+    def validate_username(self, value):
+        user = self.context.get('user')
+        if not user:
+            return value
+        conflict = User.objects.filter(username=value).exclude(id=user.id).exists()
+        if conflict:
+            raise serializers.ValidationError('This username is already taken.')
+        return value
+
+    def update(self, profile, validated_data):
+        user = profile.user
+
+        if 'username' in validated_data:
+            user.username = validated_data['username']
+        if 'email' in validated_data:
+            user.email = validated_data['email']
+
+        first_name = validated_data.get('first_name')
+        last_name = validated_data.get('last_name')
+        if first_name is not None:
+            user.first_name = first_name
+            profile.firstname = first_name
+        if last_name is not None:
+            user.last_name = last_name
+            profile.lastname = last_name
+        if 'phone' in validated_data:
+            profile.phone = validated_data['phone']
+        if 'bio' in validated_data:
+            profile.bio = validated_data['bio']
+
+        user.save(update_fields=['username', 'email', 'first_name', 'last_name'])
+        profile.save(update_fields=['firstname', 'lastname', 'phone', 'bio'])
+        return profile
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Accept an email address for password reset initiation."""
+
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Validate a reset token and set a new password."""
+
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        uid = attrs.get('uid')
+        token = attrs.get('token')
+
+        try:
+            user_id = urlsafe_base64_decode(uid).decode()
+            user = User.objects.get(pk=user_id)
+        except Exception as exc:
+            raise serializers.ValidationError({'uid': 'Invalid reset link.'}) from exc
+
+        if not default_token_generator.check_token(user, token):
+            raise serializers.ValidationError({'token': 'Invalid or expired reset token.'})
+
+        validate_password(attrs['new_password'], user)
+        attrs['user'] = user
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.validated_data['user']
+        user.set_password(self.validated_data['new_password'])
+        user.save(update_fields=['password'])
+        return user

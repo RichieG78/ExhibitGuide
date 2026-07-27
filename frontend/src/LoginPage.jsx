@@ -47,6 +47,9 @@ function LoginPage() {
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+        <p className="auth-alt auth-alt--compact">
+          <Link to="/password-reset">Forgot password?</Link>
+        </p>
         <p className="auth-alt">
           New here? <Link to="/register">Create an account</Link>
         </p>
