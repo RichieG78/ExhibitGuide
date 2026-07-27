@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import ExhibitImage from './ExhibitImage'
 import './ExhibitDetail.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -55,17 +56,7 @@ function ExhibitDetail({ id }) {
       <Link to="/" className="detail-back">← All exhibits</Link>
       <article className="detail">
       <div className="detail-media">
-        <img
-          className="detail-image"
-          src={exhibit.image_url || exhibit.image}
-          alt={exhibit.artist || 'Exhibit'}
-          onError={(e) => {
-            // If the external image_url fails, fall back to the local image once.
-            if (exhibit.image && e.currentTarget.src !== exhibit.image) {
-              e.currentTarget.src = exhibit.image
-            }
-          }}
-        />
+        <ExhibitImage exhibit={exhibit} className="detail-image" />
       </div>
 
       <div className="detail-info">

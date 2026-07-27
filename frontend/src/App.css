@@ -92,6 +92,16 @@
   background: #eee;
 }
 
+.exhibit-image--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: #ececec;
+  color: #9a9a94;
+  font-size: 0.85rem;
+}
+
 .exhibit-body {
   padding: 1rem;
   display: flex;

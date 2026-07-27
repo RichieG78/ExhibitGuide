@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import ExhibitImage from './ExhibitImage'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -42,16 +43,7 @@ function ExhibitList() {
         {exhibits.map((exhibit) => (
           <li key={exhibit.id} className="exhibit-card">
             <Link to={`/exhibits/${exhibit.id}`} className="exhibit-link">
-              <img
-                className="exhibit-image"
-                src={exhibit.image_url || exhibit.image}
-                alt={exhibit.artist || 'Exhibit'}
-                onError={(e) => {
-                  if (exhibit.image && e.currentTarget.src !== exhibit.image) {
-                    e.currentTarget.src = exhibit.image
-                  }
-                }}
-              />
+              <ExhibitImage exhibit={exhibit} className="exhibit-image" />
               <div className="exhibit-body">
                 <h2 className="exhibit-title">{exhibit.artist || 'Unknown artist'}</h2>
                 <p className="exhibit-show">{exhibit.show_name}</p>
