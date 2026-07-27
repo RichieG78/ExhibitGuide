@@ -42,6 +42,8 @@ class ExhibitSerializer(serializers.ModelSerializer):
     means the frontend gets ready-to-display data without extra API calls.
     """
 
+    # The artwork's title, exposed for the detail page heading.
+    title = serializers.SerializerMethodField()
     # Derived, read-only values that come from the Exhibit model's @property
     # methods (they read through to the related Artwork / Show).
     artist = serializers.ReadOnlyField()
@@ -59,6 +61,7 @@ class ExhibitSerializer(serializers.ModelSerializer):
             'show',
             'show_name',
             'artwork',
+            'title',
             'artist',
             'medium',
             'dimensions_height',
@@ -78,6 +81,9 @@ class ExhibitSerializer(serializers.ModelSerializer):
         ]
         # Generated automatically on save, so never accept it from the client.
         read_only_fields = ['qr_identifier']
+
+    def get_title(self, obj):
+        return obj.artwork.title if obj.artwork_id else ''
 
 
 class ArtworkSerializer(serializers.ModelSerializer):

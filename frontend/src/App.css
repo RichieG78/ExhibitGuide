@@ -32,9 +32,21 @@
   color: inherit;
 }
 
-.list-count {
-  margin: 0 0 1.5rem;
-  color: #6b6b66;
+.list-header {
+  padding-bottom: 1.25rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+.list-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 2.4rem;
+  letter-spacing: 0.3px;
+  color: var(--ink);
+}
+.list-sub {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
   font-size: 0.95rem;
 }
 
@@ -77,9 +89,9 @@
 }
 
 .exhibit-card {
-  background: #fff;
-  border: 1px solid #e2e2dd;
-  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -111,21 +123,25 @@
 
 .exhibit-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  color: var(--ink);
 }
 
 .exhibit-show {
   margin: 0;
-  font-size: 0.8rem;
-  color: #8a6d3b;
+  font-size: 0.72rem;
+  color: var(--accent);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.1em;
+  font-weight: 600;
 }
 
 .exhibit-tldr {
   margin: 0;
   font-size: 0.9rem;
-  color: #444;
+  color: var(--muted);
+  line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;

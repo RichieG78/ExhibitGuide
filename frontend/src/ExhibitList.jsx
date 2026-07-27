@@ -30,15 +30,18 @@ function ExhibitList() {
   }, [])
 
   if (status === 'loading') {
-    return <p>Loading exhibits…</p>
+    return <main className="page"><p>Loading exhibits…</p></main>
   }
   if (status === 'error') {
-    return <p className="error">Could not load exhibits: {error}</p>
+    return <main className="page"><p className="error">Could not load exhibits: {error}</p></main>
   }
 
   return (
-    <>
-      <p className="list-count">{exhibits.length} exhibits</p>
+    <main className="page">
+      <header className="list-header">
+        <h1 className="list-title">ExhibitGuide</h1>
+        <p className="list-sub">{exhibits.length} works · served live from the Django REST API</p>
+      </header>
       <ul className="exhibit-grid">
         {exhibits.map((exhibit) => (
           <li key={exhibit.id} className="exhibit-card">
@@ -58,7 +61,7 @@ function ExhibitList() {
           </li>
         ))}
       </ul>
-    </>
+    </main>
   )
 }
 
