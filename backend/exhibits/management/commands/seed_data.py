@@ -364,9 +364,12 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.uffizi.it/en/artworks/birth-of-venus",
         "video_url": "https://www.youtube.com/watch?v=iDMIBMQkBBc",
+        # Sized Wikimedia thumbnail: the full original is ~3.6 MB and renders
+        # slowly, so request a 1600px-wide version of the same image instead.
         "image_url": (
-            "https://upload.wikimedia.org/wikipedia/commons/0/0b/"
-            "Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg"
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/"
+            "Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg/"
+            "1920px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg"
         ),
         "qr_identifier": 1009,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 5, 10, 10, 0, 0)),
@@ -405,7 +408,13 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.moma.org/collection/works/79878",
         "video_url": "https://www.youtube.com/watch?v=ItOGcuFJqvc",
-        "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/39/N%C2%BA_24_%28Brown%2C_Black_and_Blue%29%2C_Mark_Rothko%2C_Paintings_in_the_San_Francisco_Museum_of_Modern_Art%2C_SFMOMA_12.jpg",
+        # Rothko's work is still in copyright, so there is no freely-licensed
+        # Wikimedia image of this specific painting (the file used previously
+        # showed a different work, No. 24). The correct image ships with the
+        # repo instead: `image` below points at it, and image_url is left empty
+        # so the API serves the bundled file as an absolute URL.
+        "image_url": "",
+        "image": "exhibit_images/No_61_Mark_Rothko.jpg",
         "qr_identifier": 1010,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 6, 1, 10, 0, 0)),
     },
@@ -504,6 +513,11 @@ class Command(BaseCommand):
                 'publish_date': data['publish_date'],
                 'user': user,
             }
+
+            # Some works have no freely-licensed external image, so the file is
+            # bundled with the repo and referenced directly on the image field.
+            if data.get('image'):
+                exhibit_defaults['image'] = data['image']
 
             # Use qr_identifier as the stable idempotency key to avoid unique-key collisions.
             exhibit, created = Exhibit.objects.get_or_create(

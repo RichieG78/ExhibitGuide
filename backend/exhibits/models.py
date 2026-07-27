@@ -6,6 +6,7 @@ That keeps artists, artworks, shows, and public exhibit records easier to reuse.
 
 from django.contrib.auth.models import User
 from django.db import models
+from PIL import Image
 
 
 class Artist(models.Model):
@@ -118,9 +119,16 @@ class Exhibit(models.Model):
     def show_name(self):
         return self.show.show_name if self.show else ''
 
+    # Uploaded exhibit images are shown as a full-width hero on the detail page,
+    # so they are capped at this size rather than the smaller profile-picture
+    # limit. Large originals (multi-megabyte scans) otherwise render slowly.
+    MAX_IMAGE_SIZE = (1600, 1600)
+
     def save(self, *args, **kwargs):
-        """Save the exhibit and generate a stable QR number after the first save."""
+        """Save the exhibit, downscale large uploads, and generate a stable QR number."""
         super().save(*args, **kwargs)
+
+        self._downscale_image()
 
         if self.qr_identifier is None and self.id is not None:
             # The QR identifier is derived from the database id so it stays predictable.
@@ -129,6 +137,22 @@ class Exhibit(models.Model):
                 qr_identifier=generated_qr_identifier
             )
             self.qr_identifier = generated_qr_identifier
+
+    def _downscale_image(self):
+        """Shrink an uploaded exhibit image in place when it exceeds MAX_IMAGE_SIZE."""
+        if not self.image:
+            return
+
+        try:
+            image_file = Image.open(self.image.path)
+        except (FileNotFoundError, OSError):
+            # Remote/missing storage or an unreadable file: leave it untouched.
+            return
+
+        max_width, max_height = self.MAX_IMAGE_SIZE
+        if image_file.width > max_width or image_file.height > max_height:
+            image_file.thumbnail(self.MAX_IMAGE_SIZE)
+            image_file.save(self.image.path, optimize=True, quality=85)
 
     def __str__(self):
         if self.artwork:
