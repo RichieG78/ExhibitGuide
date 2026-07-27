@@ -27,6 +27,46 @@
   font-weight: 600;
 }
 
+.page-title-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.list-count {
+  margin: 0 0 1.5rem;
+  color: #6b6b66;
+  font-size: 0.95rem;
+}
+
+.exhibit-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.exhibit-card {
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.exhibit-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.detail-back {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  text-decoration: none;
+  color: #6b6b66;
+  font-size: 0.9rem;
+}
+
+.detail-back:hover {
+  color: #1a1a1a;
+}
+
 .exhibit-grid {
   list-style: none;
   margin: 0;
