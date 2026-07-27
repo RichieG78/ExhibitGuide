@@ -1,13 +1,16 @@
 """Public views for scanning and viewing exhibits."""
 
 from django.shortcuts import get_object_or_404, render
-from rest_framework import viewsets
+from rest_framework import generics, permissions, viewsets
+
+from users.models import Prospect
 
 from .models import Artist, Artwork, Exhibit, Show
 from .serializers import (
 	ArtistSerializer,
 	ArtworkSerializer,
 	ExhibitSerializer,
+	ProspectSerializer,
 	ShowSerializer,
 )
 
@@ -68,3 +71,16 @@ class ShowViewSet(viewsets.ReadOnlyModelViewSet):
 
 	serializer_class = ShowSerializer
 	queryset = Show.objects.order_by('show_name')
+
+
+class ProspectCreateView(generics.CreateAPIView):
+	"""Public endpoint to capture a visitor's interest in an exhibit (a lead).
+
+	Open to anonymous visitors — no login required — so scanning a work and
+	expressing interest never hits an auth wall. This is write-only (create).
+	"""
+
+	serializer_class = ProspectSerializer
+	queryset = Prospect.objects.all()
+	permission_classes = [permissions.AllowAny]
+	authentication_classes = []

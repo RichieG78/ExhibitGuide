@@ -53,6 +53,24 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
+/* Success banner (after submitting interest) */
+.detail-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px;
+  padding: 12px 16px;
+  background: #e8f0e3;
+  border: 1px solid #cfe0c4;
+  border-radius: 12px;
+  color: #3f6212;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.detail-banner svg {
+  flex-shrink: 0;
+}
+
 /* Hero */
 .detail-hero {
   position: relative;

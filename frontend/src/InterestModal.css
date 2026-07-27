@@ -1,0 +1,134 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(28, 24, 22, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 448px;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  padding: 24px;
+  box-shadow: 0 -25px 25px rgba(0, 0, 0, 0.25);
+  animation: sheet-up 0.22s ease-out;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modal-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.modal-title {
+  margin: 0;
+  flex: 1;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--ink);
+}
+.modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.modal-sub {
+  margin: 4px 0 20px;
+  font-size: 14px;
+  line-height: 1.62;
+  color: var(--muted);
+}
+.modal-sub em {
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.modal-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 17px;
+  background: #fafaf9;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink);
+}
+.modal-input::placeholder {
+  color: rgba(28, 25, 23, 0.5);
+}
+.modal-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.modal-submit {
+  width: 100%;
+  height: 48px;
+  margin-top: 12px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--button-dark);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.modal-submit:hover {
+  background: #000;
+}
+.modal-submit:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.modal-error {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #b00020;
+  text-align: center;
+}
+
+.modal-signin {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--faint);
+}
+.modal-signin__link {
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+}

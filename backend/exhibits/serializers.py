@@ -7,6 +7,8 @@ read, and incoming JSON can be validated back into an `Exhibit`. This is the
 
 from rest_framework import serializers
 
+from users.models import Prospect
+
 from .models import Artist, Artwork, Exhibit, Show
 
 
@@ -123,3 +125,31 @@ class ShowSerializer(serializers.ModelSerializer):
             'start_date',
             'end_date',
         ]
+
+
+class ProspectSerializer(serializers.ModelSerializer):
+    """Captures an anonymous visitor's interest in an exhibit (a lead).
+
+    Only an email and the exhibit are required — the rest of the visitor-
+    intelligence fields (name, phone, dwell time, call-back) are optional so the
+    frontend can capture a lead with just an email address.
+    """
+
+    name = serializers.CharField(required=False, allow_blank=True, default='')
+    phone = serializers.CharField(required=False, allow_blank=True, default='')
+    dwell_time = serializers.IntegerField(required=False, min_value=0, default=0)
+    call_back_request = serializers.BooleanField(required=False, default=False)
+
+    class Meta:
+        model = Prospect
+        fields = [
+            'id',
+            'exhibit',
+            'name',
+            'email',
+            'phone',
+            'dwell_time',
+            'call_back_request',
+            'saved_at',
+        ]
+        read_only_fields = ['id', 'saved_at']

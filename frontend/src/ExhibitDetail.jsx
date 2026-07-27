@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ExhibitImage from './ExhibitImage'
+import InterestModal from './InterestModal'
 import './ExhibitDetail.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -36,6 +37,9 @@ const IconPause = () => (
 const IconPlus = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
 )
+const IconCheck = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+)
 
 function formatTime(seconds) {
   if (!seconds || Number.isNaN(seconds)) return '0:00'
@@ -53,6 +57,9 @@ function ExhibitDetail({ id }) {
   const [current, setCurrent] = useState(0)
   const [duration, setDuration] = useState(0)
   const [notice, setNotice] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [dwellStart] = useState(() => Date.now()) // for the dwell_time metric
   const audioRef = useRef(null)
 
   useEffect(() => {
@@ -114,6 +121,13 @@ function ExhibitDetail({ id }) {
           <IconShare />
         </button>
       </header>
+
+      {submitted && (
+        <div className="detail-banner" role="status">
+          <IconCheck />
+          Your interest has been noted — {exhibit.gallery_name || 'the gallery'} will be in touch.
+        </div>
+      )}
 
       {/* Hero */}
       <section className="detail-hero">
@@ -196,7 +210,7 @@ function ExhibitDetail({ id }) {
 
         {/* Actions */}
         <div className="detail-actions">
-          <button className="btn-primary" type="button" onClick={() => setNotice('Interest capture opens in a later phase (needs the write API + auth).')}>
+          <button className="btn-primary" type="button" onClick={() => setShowModal(true)}>
             <span>Express Interest in Purchasing</span>
             <IconPlus />
           </button>
@@ -219,6 +233,18 @@ function ExhibitDetail({ id }) {
           </div>
         )}
       </div>
+
+      {showModal && (
+        <InterestModal
+          exhibit={exhibit}
+          dwellStart={dwellStart}
+          onClose={() => setShowModal(false)}
+          onSuccess={() => {
+            setSubmitted(true)
+            setShowModal(false)
+          }}
+        />
+      )}
     </div>
   )
 }
