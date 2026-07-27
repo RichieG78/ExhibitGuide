@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from './AuthContext'
 import ExhibitImage from './ExhibitImage'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -7,6 +8,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 // Fetches all exhibits and shows them as a grid of cards.
 // Each card links to that exhibit's detail page at /exhibits/:id.
 function ExhibitList() {
+  const { user } = useAuth()
   const [exhibits, setExhibits] = useState([])
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [error, setError] = useState('')
@@ -44,6 +46,9 @@ function ExhibitList() {
         <div className="list-links">
           <Link to="/scan" className="list-scan-link">Enter the gallery — scan experience →</Link>
           <Link to="/dashboard" className="list-scan-link">Saved exhibits (member view) →</Link>
+          {user?.is_staff && (
+            <Link to="/manage" className="list-scan-link">Manage exhibits (staff) →</Link>
+          )}
         </div>
       </header>
       <ul className="exhibit-grid">

@@ -81,8 +81,21 @@ class ExhibitSerializer(serializers.ModelSerializer):
             'publish_date',
             'user',
         ]
-        # Generated automatically on save, so never accept it from the client.
-        read_only_fields = ['qr_identifier']
+        # qr_identifier is generated on save; user is set from the request.
+        read_only_fields = ['qr_identifier', 'user']
+        # Staff can create/edit with just the essential fields. String fields
+        # default to '' when omitted; price + publish_date are filled in the
+        # view (see ExhibitViewSet.perform_create).
+        extra_kwargs = {
+            'gallery_name': {'required': False},
+            'price': {'required': False},
+            'tldr': {'required': False, 'allow_blank': True},
+            'full_text': {'required': False, 'allow_blank': True},
+            'audio_url': {'required': False, 'allow_blank': True},
+            'video_url': {'required': False, 'allow_blank': True},
+            'image_url': {'required': False, 'allow_blank': True},
+            'publish_date': {'required': False},
+        }
 
     def get_title(self, obj):
         return obj.artwork.title if obj.artwork_id else ''

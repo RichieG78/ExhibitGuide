@@ -1,6 +1,7 @@
 """Public views for scanning and viewing exhibits."""
 
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from rest_framework import generics, permissions, viewsets
 
 from users.models import Prospect
@@ -33,15 +34,25 @@ def exhibit_preview_by_id_view(request, exhibit_id):
 	return render(request, 'exhibits/base.html', {'featured_exhibit': featured_exhibit})
 
 
-class ExhibitViewSet(viewsets.ReadOnlyModelViewSet):
-	"""Read-only REST API endpoints for exhibits (list + detail).
+class IsStaffOrReadOnly(permissions.BasePermission):
+	"""Anyone may read exhibits; only staff (gallery owners) may write them."""
 
-	`ReadOnlyModelViewSet` provides GET-list and GET-detail only. Create/update/
-	delete are intentionally left out until API authentication is added, so the
-	public exhibit data is safely readable but not yet writable over the API.
+	def has_permission(self, request, view):
+		if request.method in permissions.SAFE_METHODS:
+			return True
+		return bool(request.user and request.user.is_staff)
+
+
+class ExhibitViewSet(viewsets.ModelViewSet):
+	"""REST API endpoints for exhibits.
+
+	Reads (list + detail) are public; create/update/delete are restricted to
+	staff (gallery owners) via IsStaffOrReadOnly. Image uploads work through
+	DRF's default multipart parser.
 	"""
 
 	serializer_class = ExhibitSerializer
+	permission_classes = [IsStaffOrReadOnly]
 	# select_related pre-fetches the linked artwork/artist/show in one query, so
 	# the serializer's derived fields (artist, medium, show_name, ...) do not each
 	# trigger an extra database hit.
@@ -49,6 +60,16 @@ class ExhibitViewSet(viewsets.ReadOnlyModelViewSet):
 		Exhibit.objects.select_related('artwork', 'artwork__artist', 'show')
 		.order_by('-publish_date')
 	)
+
+	def perform_create(self, serializer):
+		# The owner is the staff user creating it; fill required fields the form
+		# may omit (string fields already default to '').
+		extra = {'user': self.request.user}
+		if not serializer.validated_data.get('publish_date'):
+			extra['publish_date'] = timezone.now()
+		if serializer.validated_data.get('price') is None:
+			extra['price'] = 0
+		serializer.save(**extra)
 
 
 class ArtistViewSet(viewsets.ReadOnlyModelViewSet):

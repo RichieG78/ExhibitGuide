@@ -7,6 +7,9 @@ import Dashboard from './Dashboard'
 import LoginPage from './LoginPage'
 import RegisterPage from './RegisterPage'
 import RequireAuth from './RequireAuth'
+import RequireStaff from './RequireStaff'
+import ManageExhibits from './ManageExhibits'
+import ExhibitForm from './ExhibitForm'
 
 // Small wrapper: pulls the :id out of the URL and hands it to ExhibitDetail,
 // keeping ExhibitDetail itself a plain, reusable id-driven component.
@@ -32,6 +35,9 @@ function App() {
           </RequireAuth>
         }
       />
+      <Route path="/manage" element={<RequireStaff><ManageExhibits /></RequireStaff>} />
+      <Route path="/manage/new" element={<RequireStaff><ExhibitForm /></RequireStaff>} />
+      <Route path="/manage/:id/edit" element={<RequireStaff><ExhibitForm /></RequireStaff>} />
     </Routes>
   )
 }
