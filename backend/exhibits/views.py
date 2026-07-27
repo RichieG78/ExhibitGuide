@@ -1,6 +1,9 @@
-"""Public views for scanning and viewing exhibits."""
+"""REST API views for exhibits, artists, artworks, shows, and lead capture.
 
-from django.shortcuts import get_object_or_404, render
+The public server-rendered pages (scan, exhibit preview) were retired when the
+React frontend took over; this module is now API-only.
+"""
+
 from django.utils import timezone
 from rest_framework import generics, permissions, viewsets
 
@@ -14,24 +17,6 @@ from .serializers import (
 	ProspectSerializer,
 	ShowSerializer,
 )
-
-
-def scan_view(request):
-	"""Show a simple scan entry point that links to the newest exhibit."""
-	latest_exhibit = Exhibit.objects.order_by('-publish_date').first()
-	return render(request, 'exhibits/scan.html', {'latest_exhibit': latest_exhibit})
-
-
-def exhibit_preview_view(request, qr_identifier):
-	"""Look up an exhibit by its QR code number and show the public detail page."""
-	featured_exhibit = get_object_or_404(Exhibit, qr_identifier=qr_identifier)
-	return render(request, 'exhibits/base.html', {'featured_exhibit': featured_exhibit})
-
-
-def exhibit_preview_by_id_view(request, exhibit_id):
-	"""Fallback route that loads an exhibit directly by database id."""
-	featured_exhibit = get_object_or_404(Exhibit, id=exhibit_id)
-	return render(request, 'exhibits/base.html', {'featured_exhibit': featured_exhibit})
 
 
 class IsStaffOrReadOnly(permissions.BasePermission):

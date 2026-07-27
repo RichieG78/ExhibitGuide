@@ -1,8 +1,6 @@
 """Admin configuration for exhibits and inbound prospect records."""
 
 from django.contrib import admin
-from django.urls import reverse
-from django.utils.html import format_html
 
 from .models import Artist, Artwork, Exhibit, Show
 from users.models import GalleryInquiry, Prospect
@@ -144,11 +142,10 @@ class ExhibitAdmin(admin.ModelAdmin):
 	)
 
 	def public_preview_url(self, obj):
-		"""Build the public QR preview link once the exhibit has been saved."""
+		"""Show the exhibit's public identifier (viewed in the React frontend)."""
 		if not obj or not obj.pk or obj.qr_identifier is None:
 			return 'Available after save'
-		url = reverse('exhibit_preview_by_qr', args=[obj.qr_identifier])
-		return format_html('<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>', url, url)
+		return f'QR #{obj.qr_identifier} · /exhibits/{obj.id}'
 
 	public_preview_url.short_description = 'Public exhibit URL'
 

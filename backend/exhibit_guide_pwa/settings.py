@@ -127,8 +127,6 @@ CSRF_TRUSTED_ORIGINS = _build_csrf_trusted_origins(ALLOWED_HOSTS)
 INSTALLED_APPS = [
     'exhibits.apps.ExhibitsConfig',
     'users.apps.UsersConfig',
-    'crispy_forms',
-    'crispy_bootstrap5',
     'rest_framework',
     'corsheaders',
     'django.contrib.admin',
@@ -283,10 +281,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CRISPY_TEMPLATE_PACK = 'bootstrap5'
-
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard'
+# Point the admin + DRF browsable-API login link at the Django admin login,
+# since the server-rendered auth pages were retired in favour of the React app.
+LOGIN_URL = '/admin/login/'
 
 EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = os.getenv('DJANGO_DEFAULT_FROM_EMAIL', 'noreply@exhibitguide.local')
