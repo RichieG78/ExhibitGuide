@@ -41,6 +41,7 @@ function ExhibitList() {
       <header className="list-header">
         <h1 className="list-title">ExhibitGuide</h1>
         <p className="list-sub">{exhibits.length} works · served live from the Django REST API</p>
+        <Link to="/scan" className="list-scan-link">Enter the gallery — try the scan experience →</Link>
       </header>
       <ul className="exhibit-grid">
         {exhibits.map((exhibit) => (
