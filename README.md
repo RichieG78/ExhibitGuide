@@ -19,16 +19,20 @@ If the hosted app is unavailable, run locally using the Local Setup section and 
 ### Persona 1: Visitor Flow (Public -> Enquiry -> Dashboard)
 Goal: verify the end-to-end visitor journey from scan to enquiry and saved exhibit management.
 
-1. Open `exhibit-qr-codes.html` and use one of the provided QR links (or scan one QR code if testing on mobile).
-2. Confirm the QR route opens an exhibit preview page at `/exhibits/qr/<qr_identifier>/`.
-3. On the exhibit page, select **Express Interest**.
+1. Open `<frontend>/exhibit-qr-codes.html`, generate the codes, and follow one link
+   (or scan a code with a phone). See **QR Code Entry Flow** below.
+2. Confirm the QR route opens that work's public exhibit page at `/qr/<qr_identifier>`
+   — no sign-in required.
+3. On the exhibit page, select **Express Interest in Purchasing** and submit an email
+   address. This captures a lead anonymously; confirm the success banner appears.
 4. Create a new account at `/register/`.
-5. After registration, confirm redirect to `/dashboard/`.
-6. In the dashboard, verify the scanned exhibit appears.
-7. Select **Enquire** and submit once with default contact method, then again with phone/text selected to verify phone requirement behavior.
-8. Confirm success message after enquiry.
-9. Use dashboard filters (`Scanned`, `Watching`, `Enquired`) to verify state changes and visibility.
-10. Open `/profile/` and confirm saved details can be reviewed or updated.
+5. After registration, confirm redirect to `/dashboard/` (empty for a new account).
+6. Return to an exhibit and select **Save to watchlist**, then reopen `/dashboard/`
+   and confirm the work appears with status `watching`.
+7. Select **Enquire** on that dashboard card and confirm the status changes to `enquired`.
+8. Use the dashboard filters (`All`, `Watching`, `Enquired`) to verify state changes.
+9. Open `/profile/` and confirm collector details can be reviewed and updated.
+10. Log out from the dashboard, then confirm `/dashboard/` redirects to `/login`.
 
 What this flow checks:
 - QR-first public entry route,
@@ -56,20 +60,33 @@ What this flow checks:
 - enquiry/prospect visibility for gallery follow-up.
 
 ### Minimal Route Checklist For Assessment
-Public and auth routes:
-- `/exhibits/`
-- `/exhibits/qr/<qr_identifier>/`
-- `/register/`
-- `/login/`
-- `/logout/`
-- `/password-reset/`
 
-Authenticated routes:
-- `/dashboard/`
-- `/profile/`
+Frontend routes (React app):
 
-Admin route:
-- `/admin/`
+| Route | Access | Purpose |
+|-------|--------|---------|
+| `/` | Public | Exhibit list |
+| `/exhibits/<id>` | Public | Exhibit detail |
+| `/qr/<qr_identifier>` | Public | QR code entry point (scan destination) |
+| `/scan`, `/scan/<id>` | Public | In-gallery scan simulation screen |
+| `/register`, `/login` | Public | Account creation and sign-in |
+| `/password-reset`, `/reset-password` | Public | Password reset request and confirmation |
+| `/dashboard` | Authenticated | Saved exhibits (watchlist and enquiries) |
+| `/profile` | Authenticated | Collector profile management |
+| `/manage`, `/manage/new`, `/manage/<id>/edit` | Staff only | Exhibit create/edit/delete |
+
+Backend routes (Django API + admin):
+
+| Route | Access | Purpose |
+|-------|--------|---------|
+| `/api/exhibits/` | Public read, staff write | Exhibit list and CRUD |
+| `/api/exhibits/qr/<qr_identifier>/` | Public | QR lookup by printed identifier |
+| `/api/artists/`, `/api/artworks/`, `/api/shows/` | Public | Supporting read endpoints |
+| `/api/interest/` | Public | Anonymous lead capture |
+| `/api/auth/register/`, `/api/auth/login/`, `/api/auth/refresh/` | Public | JWT authentication |
+| `/api/auth/me/`, `/api/auth/profile/` | Authenticated | Current user and profile |
+| `/api/collection/`, `/api/saved/`, `/api/inquiries/` | Authenticated | Per-user collector data |
+| `/admin/` | Staff | Django admin CMS |
 
 ## Live Application and Repository
 - Repository: this project repository (branch `react-and-rest-version`)
@@ -84,20 +101,64 @@ Admin route:
 ## Hosted Accessibility Evidence (Run-Through)
 Use this sequence to verify the hosted app is functional and accessible.
 
-1. Open the hosted root and confirm a successful page load (HTTP 200).
-2. Open `/exhibits/` and confirm the scan/entry page renders.
-3. Open `/exhibits/qr/<qr_identifier>/` using a known seeded record and confirm exhibit details render.
-4. Open `/register/`, create an account, and confirm redirect to `/dashboard/`.
-5. Log out and log in again via `/login/` to verify session/auth flow.
-6. Open `/profile/` while signed in and confirm profile page access.
-7. Submit a dashboard enquiry and confirm success feedback.
-8. Open `/admin/` with staff credentials and confirm admin index access.
+1. Open the hosted frontend root and confirm the exhibit list renders (HTTP 200).
+2. Open an exhibit from the list and confirm the detail page renders.
+3. Open `/qr/<qr_identifier>` using a seeded identifier (for example `/qr/1001`) and
+   confirm the exhibit page renders without signing in.
+4. Open `/register`, create an account, and confirm redirect to `/dashboard`.
+5. Log out and sign in again via `/login` to verify the JWT auth flow.
+6. Open `/profile` while signed in and confirm profile details load.
+7. Save an exhibit, then enquire from the dashboard and confirm the status updates.
+8. Open `<backend>/admin/` with staff credentials and confirm admin index access.
 
 Expected outcome:
-- public routes are available,
+- public routes are available without authentication,
 - authenticated routes enforce login,
 - admin route enforces staff authorization,
-- core visitor and admin workflows are operational.
+- core visitor, collector, and admin workflows are operational.
+
+## QR Code Entry Flow
+
+The QR journey is the product's primary public entry point: a visitor standing in the
+gallery scans a code beside a work and immediately reaches that work's page — no app
+install and no account required.
+
+### How it works
+
+| Step | Detail |
+|------|--------|
+| Printed code encodes | `https://<frontend>/qr/<qr_identifier>` |
+| Frontend route | `/qr/:qrId` renders the public exhibit detail page |
+| API lookup | `GET /api/exhibits/qr/<qr_identifier>/` (public, unauthenticated) |
+| Identifier source | `Exhibit.qr_identifier`, generated automatically in `Exhibit.save()` once a record is first persisted (database id + 1000) |
+
+`qr_identifier` is deliberately separate from the database primary key: printed codes stay
+stable and readable, and internal record ids are not exposed on gallery signage.
+
+Anonymous visitors can read the full exhibit page, play the audio guide, and submit
+**Express Interest in Purchasing**, which records a `Prospect` lead (with dwell time)
+without an account. Member-only actions such as **Save to watchlist** appear only when
+signed in.
+
+### Generating and printing codes
+
+The generator is served by the frontend at `<frontend>/exhibit-qr-codes.html`
+(source: `frontend/public/exhibit-qr-codes.html`). It reads live exhibit data from the
+API, so every exhibit with a `qr_identifier` — including newly created ones — receives a
+code labelled with its artwork title and artist.
+
+1. Open `<frontend>/exhibit-qr-codes.html`.
+2. Enter the **frontend site URL** (encoded into the codes) and the **API URL**
+   (queried for exhibit data). Both are remembered in the browser.
+3. Select **Generate codes**, then **Print**. The print stylesheet lays the codes out
+   four to a row and hides the on-screen controls.
+
+The page must be opened over `http(s)` rather than as a local `file://` document: a
+`file://` page sends a `null` origin, which the API's CORS policy rejects.
+
+> **Printed codes are permanent.** Set the final production frontend URL before printing,
+> and scan one code with a phone to confirm it resolves. Changing the site URL afterwards
+> invalidates every printed code.
 
 ## Documentation Map (Analysis to Design to Implementation to Test)
 - Project brief and requirements framing: `Research/ExhibitGuide_Project_Brief.pdf`
@@ -184,8 +245,8 @@ Success criteria defined at project inception:
 ### Feature Development Ledger (What, How, Why, Test)
 | Feature | Why this was needed | How it was built | Endpoint(s) | Test evidence |
 |---|---|---|---|---|
-| QR-first exhibit entry | Reduce friction between in-person viewing and digital engagement | `Exhibit` stores `qr_identifier`; exhibit routes expose a QR lookup view | `/exhibits/qr/<qr_identifier>/` | `exhibits/tests.py` covers exhibit model behavior used by the QR flow foundation |
-| Registration + login | Convert anonymous interest into persistent user state | Django auth forms and custom auth views in user app | `/register/`, `/login/`, `/logout/` | `users/tests.py` verifies registration redirect and login behavior |
+| QR-first exhibit entry | Reduce friction between in-person viewing and digital engagement | `Exhibit` stores `qr_identifier`; `ExhibitByQrView` exposes a public lookup consumed by the React `/qr/:qrId` route | `/qr/<qr_identifier>` (frontend), `/api/exhibits/qr/<qr_identifier>/` (API) | `exhibits/tests.py` covers `qr_identifier` auto-generation underpinning the QR flow |
+| Registration + login | Convert anonymous interest into persistent user state | JWT auth endpoints in `users/api_views.py` consumed by React `AuthContext` (tokens in browser storage, refresh on 401) | `/register`, `/login` (frontend); `/api/auth/register/`, `/api/auth/login/`, `/api/auth/refresh/` (API) | `users/tests_api.py` verifies registration, token issue, and protected-endpoint access |
 | Dashboard watchlist | Keep visitor intent after initial scan | `SavedExhibit` model and dashboard POST actions (`save_exhibit`, `remove_saved_exhibit`) | `/dashboard/` | `users/tests.py` validates idempotent save and remove actions |
 | Enquiry workflow | Turn viewing intent into actionable lead data for gallery follow-up | Dashboard action `send_inquiry` writes `GalleryInquiry` + `Prospect`; validates contact preferences | `/dashboard/` | `users/tests.py` validates inquiry creation and phone-required validation |
 | Profile enrichment during enquiry | Avoid repeatedly asking users for contact details | Optional `save_to_profile` path updates `UserProfile` from enquiry data | `/dashboard/`, `/profile/` | `users/tests.py` verifies profile update from enquiry submission |
@@ -274,9 +335,9 @@ Role/access matrix in this project:
 
 | Role | Allowed | Restricted |
 |---|---|---|
-| Guest (anonymous) | `/exhibits/`, `/exhibits/qr/<qr_identifier>/`, `/register/`, `/login/` | `/dashboard/`, `/profile/`, admin content operations |
-| Authenticated user | Dashboard/profile workflows, inquiries, collections | Django admin content operations (unless staff) |
-| Staff/admin user | All authenticated routes + `/admin/` CMS workflows | N/A for current scope |
+| Guest (anonymous) | `/`, `/exhibits/<id>`, `/qr/<qr_identifier>`, `/scan`, `/register`, `/login`, password reset, and `POST /api/interest/` (lead capture) | `/dashboard`, `/profile`, `/manage`, exhibit writes, admin |
+| Authenticated user | Dashboard, profile, watchlist (`/api/saved/`), enquiries (`/api/inquiries/`) | Exhibit create/edit/delete, `/manage`, Django admin |
+| Staff/admin user | All authenticated routes plus `/manage` exhibit CRUD and `/admin/` CMS workflows | N/A for current scope |
 
 ### Tested Endpoints and Evidence
 Key authentication/authorization tests now included:
@@ -500,20 +561,17 @@ Areas that still require assessor-time confirmation or further implementation:
 - at least one external API integration (explicit final-assignment feature item).
 
 ## Routes (Assessor Quick View)
-Public/auth:
-- `/exhibits/`
-- `/exhibits/qr/<qr_identifier>/`
-- `/register/`
-- `/login/`
-- `/logout/`
-- `/password-reset/` and related reset routes
 
-Authenticated:
-- `/dashboard/`
-- `/profile/`
+See **Minimal Route Checklist For Assessment** near the top of this README for the full
+frontend and API route tables. Summary:
 
-Admin:
-- `/admin/`
+Frontend (public): `/`, `/exhibits/<id>`, `/qr/<qr_identifier>`, `/scan`, `/register`,
+`/login`, `/password-reset`, `/reset-password`
+Frontend (authenticated): `/dashboard`, `/profile`
+Frontend (staff): `/manage`, `/manage/new`, `/manage/<id>/edit`
+API: `/api/exhibits/`, `/api/exhibits/qr/<qr_identifier>/`, `/api/interest/`,
+`/api/auth/*`, `/api/collection/`, `/api/saved/`, `/api/inquiries/`
+Admin: `/admin/`
 
 ## Automated Testing
 Current test run result:
