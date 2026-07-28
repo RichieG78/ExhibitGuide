@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exhibit QR Codes</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 24px;
+      color: #222;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.4rem;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .intro {
+      text-align: center;
+      color: #666;
+      font-size: 0.85rem;
+      margin: 0 auto 24px;
+      max-width: 620px;
+    }
+
+    .controls {
+      max-width: 620px;
+      margin: 0 auto 32px;
+      background: white;
+      border-radius: 10px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .controls input {
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    .controls .row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .controls button {
+      padding: 9px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      background: #1c1816;
+      color: white;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .controls button.secondary {
+      background: white;
+      color: #1c1816;
+      border: 1px solid #ccc;
+    }
+
+    .hint {
+      font-size: 0.72rem;
+      color: #888;
+      margin-top: 8px;
+    }
+
+    .status {
+      text-align: center;
+      color: #666;
+      font-size: 0.9rem;
+      padding: 20px;
+    }
+
+    .status.error { color: #b00020; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .card .qr {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .card .label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #222;
+      margin-bottom: 2px;
+    }
+
+    .card .artist {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .card .url {
+      font-size: 0.65rem;
+      color: #888;
+      word-break: break-all;
+    }
+
+    @media print {
+      body { background: white; padding: 0; }
+      h1 { margin-bottom: 16px; }
+      .intro, .controls { display: none; }
+      .grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Exhibit QR Codes</h1>
+  <p class="intro">
+    Codes are generated from live exhibit data. Each one encodes
+    <code>&lt;site&gt;/qr/&lt;qr_identifier&gt;</code>, which opens that work's public
+    page — no account needed.
+  </p>
+
+  <div class="controls">
+    <label for="site">Frontend site URL (where the React app is hosted)</label>
+    <input id="site" type="url" placeholder="https://your-frontend.onrender.com" />
+    <div class="row">
+      <label for="api" style="flex:1">
+        API URL (where the Django backend is hosted)
+        <input id="api" type="url" placeholder="https://your-backend.onrender.com" />
+      </label>
+    </div>
+    <div class="row">
+      <button id="generate" type="button">Generate codes</button>
+      <button id="print" type="button" class="secondary">Print</button>
+    </div>
+    <p class="hint">
+      Printed codes are permanent — set the final production site URL before printing.
+      Values are remembered in this browser.
+    </p>
+  </div>
+
+  <div class="status" id="status">Enter your URLs above, then select “Generate codes”.</div>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const DEFAULT_SITE = 'http://localhost:5173';
+    const DEFAULT_API = 'http://localhost:8000';
+
+    const siteInput = document.getElementById('site');
+    const apiInput = document.getElementById('api');
+    const grid = document.getElementById('grid');
+    const statusEl = document.getElementById('status');
+
+    // Restore previously used URLs so the production values persist locally.
+    siteInput.value = localStorage.getItem('qr_site') || DEFAULT_SITE;
+    apiInput.value = localStorage.getItem('qr_api') || DEFAULT_API;
+
+    function setStatus(message, isError) {
+      statusEl.textContent = message;
+      statusEl.className = isError ? 'status error' : 'status';
+      statusEl.style.display = message ? 'block' : 'none';
+    }
+
+    function buildCard(exhibit, siteUrl) {
+      const url = `${siteUrl}/qr/${exhibit.qr_identifier}`;
+
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const qrDiv = document.createElement('div');
+      qrDiv.className = 'qr';
+      const qrTarget = document.createElement('div');
+      qrDiv.appendChild(qrTarget);
+
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = exhibit.title || `Exhibit ${exhibit.id}`;
+
+      const artist = document.createElement('div');
+      artist.className = 'artist';
+      artist.textContent = exhibit.artist || '';
+
+      const urlDiv = document.createElement('div');
+      urlDiv.className = 'url';
+      urlDiv.textContent = url;
+
+      card.append(qrDiv, label, artist, urlDiv);
+      grid.appendChild(card);
+
+      new QRCode(qrTarget, {
+        text: url,
+        width: 160,
+        height: 160,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    async function generate() {
+      const siteUrl = siteInput.value.trim().replace(/\/+$/, '');
+      const apiUrl = apiInput.value.trim().replace(/\/+$/, '');
+
+      if (!siteUrl || !apiUrl) {
+        setStatus('Both URLs are required.', true);
+        return;
+      }
+
+      localStorage.setItem('qr_site', siteUrl);
+      localStorage.setItem('qr_api', apiUrl);
+
+      grid.innerHTML = '';
+      setStatus('Loading exhibits…');
+
+      try {
+        const response = await fetch(`${apiUrl}/api/exhibits/`);
+        if (!response.ok) throw new Error(`API responded with ${response.status}`);
+        const exhibits = await response.json();
+
+        const withCodes = exhibits.filter((e) => e.qr_identifier);
+        if (!withCodes.length) {
+          setStatus('No exhibits with a QR identifier were returned.', true);
+          return;
+        }
+
+        withCodes
+          .sort((a, b) => a.qr_identifier - b.qr_identifier)
+          .forEach((exhibit) => buildCard(exhibit, siteUrl));
+
+        setStatus('');
+      } catch (error) {
+        setStatus(
+          `Could not load exhibits from ${apiUrl}: ${error.message}. ` +
+          'Check the API URL is correct and reachable.',
+          true
+        );
+      }
+    }
+
+    document.getElementById('generate').addEventListener('click', generate);
+    document.getElementById('print').addEventListener('click', () => window.print());
+  </script>
+</body>
+</html>

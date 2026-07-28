@@ -12,6 +12,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ArtistViewSet,
     ArtworkViewSet,
+    ExhibitByQrView,
     ExhibitViewSet,
     ProspectCreateView,
     ShowViewSet,
@@ -23,7 +24,15 @@ router.register(r'artists', ArtistViewSet, basename='artist')
 router.register(r'artworks', ArtworkViewSet, basename='artwork')
 router.register(r'shows', ShowViewSet, basename='show')
 
-urlpatterns = router.urls + [
+urlpatterns = [
+    # Must precede the router: its /exhibits/<pk>/ pattern would otherwise
+    # capture the literal "qr" segment as a primary key.
+    path(
+        'exhibits/qr/<int:qr_identifier>/',
+        ExhibitByQrView.as_view(),
+        name='exhibit_by_qr',
+    ),
+] + router.urls + [
     # Public lead capture (POST): a visitor expressing interest in an exhibit.
     path('interest/', ProspectCreateView.as_view(), name='interest'),
 ]

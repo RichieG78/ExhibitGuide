@@ -49,7 +49,7 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-function ExhibitDetail({ id }) {
+function ExhibitDetail({ id, qrId }) {
   const { user, authFetch } = useAuth()
   const [exhibit, setExhibit] = useState(null)
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
@@ -67,7 +67,11 @@ function ExhibitDetail({ id }) {
 
   useEffect(() => {
     setStatus('loading')
-    fetch(`${API_BASE}/api/exhibits/${id}/`)
+    // Scanned QR codes resolve by printed identifier; everything else by id.
+    const endpoint = qrId
+      ? `${API_BASE}/api/exhibits/qr/${qrId}/`
+      : `${API_BASE}/api/exhibits/${id}/`
+    fetch(endpoint)
       .then((response) => {
         if (!response.ok) throw new Error(`API responded with ${response.status}`)
         return response.json()
@@ -80,7 +84,7 @@ function ExhibitDetail({ id }) {
         setError(err.message)
         setStatus('error')
       })
-  }, [id])
+  }, [id, qrId])
 
   if (status === 'loading') {
     return <div className="detail-screen"><p className="detail-status">Loading exhibit…</p></div>

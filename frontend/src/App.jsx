@@ -21,11 +21,19 @@ function ExhibitDetailRoute() {
   return <ExhibitDetail id={id} />
 }
 
+// Entry point for printed QR codes: /qr/<qr_identifier> resolves the work by its
+// printed identifier and shows the same public exhibit page. No login required.
+function QrRoute() {
+  const { qrId } = useParams()
+  return <ExhibitDetail qrId={qrId} />
+}
+
 function App() {
   return (
     <Routes>
       <Route path="/" element={<ExhibitList />} />
       <Route path="/exhibits/:id" element={<ExhibitDetailRoute />} />
+      <Route path="/qr/:qrId" element={<QrRoute />} />
       <Route path="/scan" element={<ScanScreen />} />
       <Route path="/scan/:id" element={<ScanScreen />} />
       <Route path="/login" element={<LoginPage />} />

@@ -57,6 +57,21 @@ class ExhibitViewSet(viewsets.ModelViewSet):
 		serializer.save(**extra)
 
 
+class ExhibitByQrView(generics.RetrieveAPIView):
+	"""Public lookup of one exhibit by its printed QR identifier.
+
+	Printed QR codes encode /qr/<qr_identifier> on the frontend, which resolves
+	the work through this endpoint. Deliberately public: scanning a code in the
+	gallery must never hit a login wall.
+	"""
+
+	serializer_class = ExhibitSerializer
+	permission_classes = [permissions.AllowAny]
+	authentication_classes = []
+	lookup_field = 'qr_identifier'
+	queryset = Exhibit.objects.select_related('artwork', 'artwork__artist', 'show')
+
+
 class ArtistViewSet(viewsets.ReadOnlyModelViewSet):
 	"""Read-only REST API endpoints for artists (list + detail)."""
 
