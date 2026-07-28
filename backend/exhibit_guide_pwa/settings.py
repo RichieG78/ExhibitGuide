@@ -154,10 +154,30 @@ MIDDLEWARE = [
 # Cross-Origin Resource Sharing: allow the React dev server (Vite) to call the
 # API from its own origin. In production, add the deployed frontend origin here
 # (ideally via an environment variable) rather than hardcoding it.
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-]
+def _build_cors_allowed_origins():
+    """Allow the local Vite dev server plus any deployed frontend origins.
+
+    Set DJANGO_CORS_ALLOWED_ORIGINS in production to the hosted frontend origin,
+    for example: https://exhibitguide-react.onrender.com
+    """
+    origins = ['http://localhost:5173', 'http://127.0.0.1:5173']
+    origins.extend(_csv_env(os.getenv('DJANGO_CORS_ALLOWED_ORIGINS', '')))
+
+    frontend_url = os.getenv('FRONTEND_URL', '').strip().rstrip('/')
+    if frontend_url:
+        origins.append(frontend_url)
+
+    # Preserve order while removing duplicates.
+    seen = set()
+    unique = []
+    for origin in origins:
+        if origin and origin not in seen:
+            unique.append(origin)
+            seen.add(origin)
+    return unique
+
+
+CORS_ALLOWED_ORIGINS = _build_cors_allowed_origins()
 
 # Django REST Framework: authenticate with JWT (for the React SPA) and sessions
 # (for the browsable API). Default permission stays open so the public exhibit
