@@ -45,7 +45,17 @@ function ExhibitList() {
         <p className="list-sub">{exhibits.length} works · served live from the Django REST API</p>
         <div className="list-links">
           <Link to="/scan" className="list-scan-link">Enter the gallery — scan experience →</Link>
-          <Link to="/dashboard" className="list-scan-link">Saved exhibits (member view) →</Link>
+          {user ? (
+            <>
+              <Link to="/dashboard" className="list-scan-link">My dashboard →</Link>
+              <Link to="/profile" className="list-scan-link">My profile →</Link>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="list-scan-link">Member sign in →</Link>
+              <Link to="/register" className="list-scan-link">Create collector account →</Link>
+            </>
+          )}
           {user?.is_staff && (
             <Link to="/manage" className="list-scan-link">Manage exhibits (staff) →</Link>
           )}

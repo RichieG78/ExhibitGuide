@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import './Auth.css'
@@ -7,7 +7,14 @@ function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const next = location.state?.from || '/dashboard'
+  const interestExhibit = useMemo(
+    () => new URLSearchParams(location.search).get('interest_exhibit'),
+    [location.search]
+  )
+  const defaultNext = interestExhibit
+    ? `/dashboard?interest_exhibit=${encodeURIComponent(interestExhibit)}`
+    : '/dashboard'
+  const next = location.state?.from || defaultNext
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -51,7 +58,10 @@ function LoginPage() {
           <Link to="/password-reset">Forgot password?</Link>
         </p>
         <p className="auth-alt">
-          New here? <Link to="/register">Create an account</Link>
+          New here?{' '}
+          <Link to={interestExhibit ? `/register?interest_exhibit=${encodeURIComponent(interestExhibit)}` : '/register'}>
+            Create an account
+          </Link>
         </p>
       </div>
     </main>

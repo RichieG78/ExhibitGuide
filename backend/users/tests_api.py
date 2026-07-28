@@ -1,7 +1,11 @@
 from django.contrib.auth.models import User
 from django.core import mail
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
+
+from exhibits.models import Artist, Artwork, Exhibit, Show
+from users.models import GalleryInquiry
 
 
 class UserApiProfileTests(TestCase):
@@ -92,3 +96,74 @@ class UserApiPasswordResetTests(TestCase):
         self.assertEqual(confirm_response.status_code, 200)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('NewStrongPass123!'))
+
+
+class UserApiInquiryTests(TestCase):
+    def setUp(self):
+        owner = User.objects.create_user(
+            username='gallery-owner',
+            email='owner@example.com',
+            password='StrongPass123!',
+        )
+        self.user = User.objects.create_user(
+            username='inquirer',
+            email='inquirer@example.com',
+            password='StrongPass123!',
+        )
+
+        artist = Artist.objects.create(firstname='Vincent', lastname='van Gogh', nationality='Dutch')
+        artwork = Artwork.objects.create(
+            title='The Starry Night',
+            artist=artist,
+            medium='Oil on canvas',
+            dimensions_height=74,
+            dimensions_width=92,
+            provenance='Museum collection provenance',
+        )
+        show = Show.objects.create(show_name='Masters of Light')
+        self.exhibit = Exhibit.objects.create(
+            user=owner,
+            show=show,
+            artwork=artwork,
+            price=1000,
+            currency='USD',
+            tldr='Short summary',
+            full_text='Longer description',
+            audio_url='https://example.com/audio.mp3',
+            video_url='https://example.com/video.mp4',
+            image_url='https://example.com/image.jpg',
+            publish_date=timezone.now(),
+        )
+
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_inquiry_create_returns_notified_status(self):
+        response = self.client.post(
+            '/api/inquiries/',
+            {'exhibit': self.exhibit.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['already_expressed'], False)
+        self.assertIn('notified', response.data['detail'].lower())
+        self.assertEqual(GalleryInquiry.objects.filter(user=self.user, exhibit=self.exhibit).count(), 1)
+
+    def test_inquiry_repeat_returns_already_expressed(self):
+        GalleryInquiry.objects.create(
+            user=self.user,
+            exhibit=self.exhibit,
+            message='Initial inquiry',
+        )
+
+        response = self.client.post(
+            '/api/inquiries/',
+            {'exhibit': self.exhibit.id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['already_expressed'], True)
+        self.assertIn('already', response.data['detail'].lower())
+        self.assertEqual(GalleryInquiry.objects.filter(user=self.user, exhibit=self.exhibit).count(), 1)

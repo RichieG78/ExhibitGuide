@@ -194,6 +194,30 @@ class InquiryCreateView(generics.CreateAPIView):
     serializer_class = InquirySerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        exhibit = serializer.validated_data.get('exhibit')
+        exists = GalleryInquiry.objects.filter(user=request.user, exhibit=exhibit).exists()
+        if exists:
+            return Response(
+                {
+                    'detail': 'Interest already expressed for this exhibit.',
+                    'already_expressed': True,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        payload = {
+            **serializer.data,
+            'detail': 'Interest notified to the gallery.',
+            'already_expressed': False,
+        }
+        return Response(payload, status=status.HTTP_201_CREATED, headers=headers)
+
     def perform_create(self, serializer):
         exhibit = serializer.validated_data.get('exhibit')
         message = (serializer.validated_data.get('message') or '').strip()

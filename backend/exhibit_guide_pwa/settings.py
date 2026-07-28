@@ -160,7 +160,16 @@ def _build_cors_allowed_origins():
     Set DJANGO_CORS_ALLOWED_ORIGINS in production to the hosted frontend origin,
     for example: https://exhibitguide-react.onrender.com
     """
-    origins = ['http://localhost:5173', 'http://127.0.0.1:5173']
+    origins = [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:5174',
+        'http://127.0.0.1:5174',
+        'http://localhost:5175',
+        'http://127.0.0.1:5175',
+        'http://localhost:5176',
+        'http://127.0.0.1:5176',
+    ]
     origins.extend(_csv_env(os.getenv('DJANGO_CORS_ALLOWED_ORIGINS', '')))
 
     frontend_url = os.getenv('FRONTEND_URL', '').strip().rstrip('/')

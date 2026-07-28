@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from './AuthContext'
 import './InterestModal.css'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const PENDING_INTEREST_KEY = 'eg_interest_exhibit_id'
 
 const IconClose = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -10,40 +11,65 @@ const IconClose = () => (
   </svg>
 )
 
-// Bottom-sheet lead-capture modal (Figma design 3). Captures an email and posts
-// it to the public /api/interest/ endpoint as a Prospect for this exhibit.
 function InterestModal({ exhibit, dwellStart, onClose, onSuccess }) {
+  const navigate = useNavigate()
+  const { user, register } = useAuth()
+
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const submit = (e) => {
+  const usernameFromEmail = (value) => {
+    const local = value.split('@')[0] || 'collector'
+    return local.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').slice(0, 24) || 'collector'
+  }
+
+  const registerWithRetry = async (baseUsername, emailValue, passwordValue) => {
+    let username = baseUsername
+    for (let i = 0; i < 4; i += 1) {
+      try {
+        await register(username, emailValue, passwordValue)
+        return
+      } catch (err) {
+        const msg = String(err?.message || '')
+        if (!/username|taken|exists/i.test(msg)) {
+          throw err
+        }
+        username = `${baseUsername}_${Math.floor(1000 + Math.random() * 9000)}`
+      }
+    }
+    throw new Error('Could not create account. Please try a different email.')
+  }
+
+  const submit = async (e) => {
     e.preventDefault()
-    if (!email || submitting) return
+    if (submitting) return
+
     setSubmitting(true)
     setError('')
-    const dwell_time = dwellStart
-      ? Math.max(0, Math.round((Date.now() - dwellStart) / 1000))
-      : 0
 
-    fetch(`${API_BASE}/api/interest/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ exhibit: exhibit.id, email, dwell_time }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then((data) => {
-            throw new Error(data.email?.[0] || data.detail || `Error ${response.status}`)
-          })
-        }
-        return response.json()
-      })
-      .then(() => onSuccess())
-      .catch((err) => {
-        setError(err.message)
-        setSubmitting(false)
-      })
+    try {
+      localStorage.setItem(PENDING_INTEREST_KEY, String(exhibit.id))
+
+      if (user) {
+        onSuccess()
+        navigate(`/dashboard?interest_exhibit=${exhibit.id}`, { replace: true })
+        return
+      }
+
+      if (!email || !password) {
+        throw new Error('Email and password are required.')
+      }
+
+      const baseUsername = usernameFromEmail(email)
+      await registerWithRetry(baseUsername, email, password)
+      onSuccess()
+      navigate(`/dashboard?interest_exhibit=${exhibit.id}`, { replace: true })
+    } catch (err) {
+      setError(err.message)
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -63,8 +89,8 @@ function InterestModal({ exhibit, dwellStart, onClose, onSuccess }) {
         </div>
 
         <p className="modal-sub">
-          {exhibit.gallery_name || 'The gallery'} will reach out personally with full
-          details and provenance on <em>{exhibit.title || exhibit.artist}</em>.
+          Create your collector account in seconds to express interest in{' '}
+          <em>{exhibit.title || exhibit.artist}</em> and continue on your dashboard.
         </p>
 
         <form onSubmit={submit}>
@@ -76,17 +102,37 @@ function InterestModal({ exhibit, dwellStart, onClose, onSuccess }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoFocus
+            disabled={Boolean(user)}
           />
+          {!user && (
+            <input
+              className="modal-input"
+              type="password"
+              required
+              placeholder="Create password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          )}
           <button className="modal-submit" type="submit" disabled={submitting}>
-            {submitting ? 'Sending…' : 'Notify the Gallery'}
+            {submitting ? 'Continuing…' : user ? 'Continue to dashboard' : 'Create account and continue'}
           </button>
         </form>
 
         {error && <p className="modal-error">{error}</p>}
 
-        <p className="modal-signin">
-          or <Link to="/login" className="modal-signin__link">sign in</Link> · Google · Apple
-        </p>
+        {!user && (
+          <p className="modal-signin">
+            Already have an account?{' '}
+            <Link
+              to={`/login?interest_exhibit=${exhibit.id}`}
+              className="modal-signin__link"
+              onClick={onClose}
+            >
+              Sign in
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   )

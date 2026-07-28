@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import ExhibitImage from './ExhibitImage'
 import './Dashboard.css'
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const PENDING_INTEREST_KEY = 'eg_interest_exhibit_id'
 const FILTERS = ['All', 'Watching', 'Enquired', 'Acquired']
 
 const IconBack = () => (
@@ -27,11 +29,19 @@ const IconLogout = () => (
 
 function Dashboard() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user, authFetch, logout } = useAuth()
   const [items, setItems] = useState([])
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('All')
+  const [featured, setFeatured] = useState(null)
+
+  const interestExhibitId = useMemo(() => {
+    const fromQuery = searchParams.get('interest_exhibit')
+    if (fromQuery) return fromQuery
+    return localStorage.getItem(PENDING_INTEREST_KEY)
+  }, [searchParams])
 
   const load = useCallback(() => {
     setStatus('loading')
@@ -54,10 +64,41 @@ function Dashboard() {
     load()
   }, [load])
 
+  useEffect(() => {
+    if (!interestExhibitId) {
+      setFeatured(null)
+      return
+    }
+
+    fetch(`${API_BASE}/api/exhibits/${interestExhibitId}/`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Could not load scanned artwork')
+        return res.json()
+      })
+      .then((data) => setFeatured(data))
+      .catch(() => setFeatured(null))
+  }, [interestExhibitId])
+
   const visible = filter === 'All' ? items : items.filter((it) => it.status === filter.toLowerCase())
+  const hasFeaturedInCollection = featured && items.some((item) => item.id === featured.id)
 
   const enquire = (id) => {
     authFetch('/api/inquiries/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ exhibit: id }),
+    }).then((res) => {
+      if (res.ok) {
+        load()
+        if (featured && String(featured.id) === String(id)) {
+          localStorage.removeItem(PENDING_INTEREST_KEY)
+        }
+      }
+    })
+  }
+
+  const saveFeatured = (id) => {
+    authFetch('/api/saved/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ exhibit: id }),
@@ -90,6 +131,32 @@ function Dashboard() {
         <h1 className="dash-name">{displayName}</h1>
         <p className="dash-subtitle">Pieces you've expressed interest in</p>
       </section>
+
+      {featured && !hasFeaturedInCollection && (
+        <section className="dash-featured">
+          <p className="dash-featured__eyebrow">Scanned Just Now</p>
+          <article className="dash-card">
+            <button className="dash-card__media" type="button" onClick={() => navigate(`/exhibits/${featured.id}`)}>
+              <ExhibitImage exhibit={featured} className="dash-card__img" />
+            </button>
+            <div className="dash-card__head">
+              <div>
+                <h2 className="dash-card__title">{featured.title || featured.artist}</h2>
+                <p className="dash-card__artist">{featured.artist}</p>
+              </div>
+            </div>
+            <div className="dash-featured__actions">
+              <button className="dash-enquire" type="button" onClick={() => saveFeatured(featured.id)}>
+                Add to watchlist
+              </button>
+              <button className="dash-enquire" type="button" onClick={() => enquire(featured.id)}>
+                Enquire
+              </button>
+            </div>
+            <div className="dash-divider" />
+          </article>
+        </section>
+      )}
 
       <div className="dash-filters">
         {FILTERS.map((f) => (

@@ -6,6 +6,7 @@ import InterestModal from './InterestModal'
 import './ExhibitDetail.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const PENDING_INTEREST_KEY = 'eg_interest_exhibit_id'
 
 // Fixed waveform bar heights (decorative), matching the Figma rhythm.
 const WAVEFORM = [
@@ -59,8 +60,8 @@ function ExhibitDetail({ id, qrId }) {
   const [current, setCurrent] = useState(0)
   const [duration, setDuration] = useState(0)
   const [notice, setNotice] = useState('')
+  const [interestNotice, setInterestNotice] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
   const [saved, setSaved] = useState(false)
   const [dwellStart] = useState(() => Date.now()) // for the dwell_time metric
   const audioRef = useRef(null)
@@ -126,6 +127,34 @@ function ExhibitDetail({ id, qrId }) {
     })
   }
 
+  const openInterest = async () => {
+    if (!user) {
+      localStorage.setItem(PENDING_INTEREST_KEY, String(exhibit.id))
+      setShowModal(true)
+      return
+    }
+
+    try {
+      const res = await authFetch('/api/inquiries/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exhibit: exhibit.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.detail || `Error ${res.status}`)
+      }
+
+      if (data.already_expressed) {
+        setInterestNotice('You have already expressed interest in this exhibit.')
+      } else {
+        setInterestNotice('Your interest has been notified to the gallery.')
+      }
+    } catch {
+      setInterestNotice('Could not notify the gallery right now. Please try again.')
+    }
+  }
+
   return (
     <div className="detail-screen">
       {/* Header */}
@@ -139,10 +168,10 @@ function ExhibitDetail({ id, qrId }) {
         </button>
       </header>
 
-      {submitted && (
+      {interestNotice && (
         <div className="detail-banner" role="status">
           <IconCheck />
-          Your interest has been noted — {exhibit.gallery_name || 'the gallery'} will be in touch.
+          {interestNotice}
         </div>
       )}
 
@@ -172,6 +201,11 @@ function ExhibitDetail({ id, qrId }) {
             <IconVideo /> Watch
           </button>
         </div>
+
+        <button className="btn-primary panel-interest-btn" type="button" onClick={openInterest}>
+          <span>Express Interest in Purchasing</span>
+          <IconPlus />
+        </button>
 
         {/* Tab panels */}
         {tab === 'listen' && (
@@ -206,10 +240,35 @@ function ExhibitDetail({ id, qrId }) {
         )}
 
         {tab === 'read' && (
-          <div className="panel-card">
-            <p className="panel-label">About the work</p>
-            <p className="panel-text">{exhibit.full_text || 'No description available.'}</p>
-          </div>
+          <>
+            <div className="panel-card">
+              <p className="panel-label">About the work</p>
+              <div className="panel-info-stack">
+                <div className="panel-info-block">
+                  <p className="panel-info-title">Price</p>
+                  <p className="panel-text panel-text--tight">{exhibit.price ? `${exhibit.currency} ${exhibit.price.toLocaleString()}` : 'Price on request'}</p>
+                </div>
+
+                {exhibit.tldr && (
+                  <div className="panel-info-block">
+                    <p className="panel-text panel-text--tight">{exhibit.tldr}</p>
+                  </div>
+                )}
+
+                {exhibit.provenance && (
+                  <div className="panel-info-block">
+                    <p className="panel-info-title">Provenance</p>
+                    <p className="panel-text panel-text--tight">{exhibit.provenance}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="panel-description-block">
+                <p className="panel-info-title">Description</p>
+                <p className="panel-text panel-text--tight">{exhibit.full_text || 'No description available.'}</p>
+              </div>
+            </div>
+          </>
         )}
 
         {tab === 'watch' && (
@@ -227,13 +286,16 @@ function ExhibitDetail({ id, qrId }) {
 
         {/* Actions */}
         <div className="detail-actions">
-          <button className="btn-primary" type="button" onClick={() => setShowModal(true)}>
-            <span>Express Interest in Purchasing</span>
-            <IconPlus />
-          </button>
-          <button className="btn-secondary" type="button" onClick={() => setNotice('Price list requests open in a later phase.')}>
-            Request Price List
-          </button>
+          {user && (
+            <div className="detail-member-nav">
+              <Link to="/dashboard" className="btn-secondary detail-member-nav__link">
+                Go to dashboard
+              </Link>
+              <Link to="/profile" className="btn-secondary detail-member-nav__link">
+                Go to profile
+              </Link>
+            </div>
+          )}
           {user &&
             (saved ? (
               <Link to="/dashboard" className="btn-secondary detail-saved-link">
@@ -246,19 +308,6 @@ function ExhibitDetail({ id, qrId }) {
             ))}
           {notice && <p className="detail-notice">{notice}</p>}
         </div>
-
-        {/* Gallery Director's Note */}
-        {exhibit.provenance && (
-          <div className="director-note">
-            <div className="director-note__avatar" aria-hidden="true">
-              {(exhibit.gallery_name || 'G').charAt(0)}
-            </div>
-            <div>
-              <p className="director-note__label">Gallery Director's Note</p>
-              <p className="director-note__quote">“{exhibit.provenance}”</p>
-            </div>
-          </div>
-        )}
       </div>
 
       {showModal && (
@@ -267,7 +316,7 @@ function ExhibitDetail({ id, qrId }) {
           dwellStart={dwellStart}
           onClose={() => setShowModal(false)}
           onSuccess={() => {
-            setSubmitted(true)
+            setInterestNotice('Your interest has been notified to the gallery.')
             setShowModal(false)
           }}
         />

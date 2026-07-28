@@ -1,11 +1,16 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import './Auth.css'
 
 function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const interestExhibit = useMemo(
+    () => new URLSearchParams(location.search).get('interest_exhibit'),
+    [location.search]
+  )
 
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -19,7 +24,10 @@ function RegisterPage() {
     setError('')
     try {
       await register(username, email, password)
-      navigate('/dashboard', { replace: true })
+      const next = interestExhibit
+        ? `/dashboard?interest_exhibit=${encodeURIComponent(interestExhibit)}`
+        : '/dashboard'
+      navigate(next, { replace: true })
     } catch (err) {
       setError(err.message)
       setSubmitting(false)
@@ -51,7 +59,10 @@ function RegisterPage() {
           </button>
         </form>
         <p className="auth-alt">
-          Already have an account? <Link to="/login">Sign in</Link>
+          Already have an account?{' '}
+          <Link to={interestExhibit ? `/login?interest_exhibit=${encodeURIComponent(interestExhibit)}` : '/login'}>
+            Sign in
+          </Link>
         </p>
       </div>
     </main>
