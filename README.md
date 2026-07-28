@@ -72,9 +72,14 @@ Admin route:
 - `/admin/`
 
 ## Live Application and Repository
-- Repository: this project repository
-- Hosted URL configured in settings: `https://exhibitguide.onrender.com`
-- Note: hosted availability depends on deployment state and hosting uptime.
+- Repository: this project repository (branch `react-and-rest-version`)
+- Frontend (React) hosted URL: _to be added after deployment_
+- Backend (Django REST API + admin) hosted URL: _to be added after deployment_
+- This version deploys as two Render services; see **Deployment Runbook (Render)** below.
+- The original single-service Django application is deployed separately from `main` at
+  `https://exhibitguide.onrender.com`.
+- Note: hosted availability depends on deployment state and hosting uptime. On Render's
+  free tier the backend sleeps when idle, so the first request may take 30–60 seconds.
 
 ## Hosted Accessibility Evidence (Run-Through)
 Use this sequence to verify the hosted app is functional and accessible.
@@ -116,14 +121,22 @@ To demonstrate clean submission hygiene, this project applies the following chec
 - Keep `.gitignore` Django-specific (for example `*.sqlite3`, `.env`) and avoid Flask-only patterns that do not apply to this project.
 
 ## Technical Stack
-- Python 3.12
-- Django 4.2
+
+Backend (`backend/`) — REST API and admin only; no server-rendered application pages:
+- Python 3.12, Django 4.2, Django ORM
+- Django REST Framework (`djangorestframework`)
+- JWT authentication (`djangorestframework-simplejwt`)
+- `django-cors-headers` for cross-origin access from the React frontend
 - PostgreSQL (when `DATABASE_URL` is provided) / SQLite (local default)
-- Django ORM
-- Django auth system (`UserCreationForm`, `AuthenticationForm`, password reset views)
-- HTML templates, CSS, JavaScript
-- `crispy_forms` + `crispy_bootstrap5` (installed and configured)
+- Django auth system + token-based password reset
 - WhiteNoise + Gunicorn for deployment support
+
+Frontend (`frontend/`) — separate single-page application:
+- React 19 with Vite
+- React Router for client-side routing
+- Native `fetch` for API calls (no HTTP client dependency)
+- CSS custom properties implementing the Figma design system
+  (DM Serif Display + Instrument Sans)
 
 ## Core Features Implemented
 - Public scan page and exhibit preview page
@@ -443,8 +456,8 @@ Implemented admin operations:
 |---|---|---|
 | Demonstrate understanding and apply key concepts of Django | Met | Django app structure, forms, views, templates, auth views, messages, and admin are used throughout |
 | Show clear understanding of database integration in Django | Met | ORM models with relationships, migrations, query filtering, and admin data operations |
-| Show clear understanding of authentication and authorisation | Met | Register/login/logout, protected routes (`@login_required`), Django password reset flow |
-| Demonstrate clean code structure including HTML templates, Bootstrap, JavaScript | Met (with note) | Clear app and template/static structure; Bootstrap use is via crispy forms integration rather than a full Bootstrap component system |
+| Show clear understanding of authentication and authorisation | Met | JWT register/login/refresh endpoints, `IsAuthenticated` per-user endpoints, staff-only exhibit writes (`IsStaffOrReadOnly`), protected React routes, token-based password reset |
+| Demonstrate clean code structure including templates, styling, JavaScript | Met (with note) | Structure is a decoupled React SPA (`frontend/`) against a Django REST API (`backend/`); server-rendered templates and crispy-forms were retired on this branch. Styling is a custom CSS design system implementing the project's Figma designs rather than Bootstrap |
 | Show evidence of a hosted Django app that is fully functional and accessible | Partially met | Hosting configuration is present; assessor should verify live uptime and route functionality at marking time |
 
 Notes for assessors:
@@ -624,10 +637,26 @@ python manage.py runserver
 9. Execute the hosted/local run-through checklist in this README to verify functional endpoints.
 
 ## Deployment Runbook (Render)
-1. Create a Render Postgres instance.
-2. Create a Render Web Service connected to this repository (deploy from the relevant branch).
-3. Set the service's **Root Directory** to `backend` — in this monorepo layout the Django project (with `manage.py` and `requirements.txt`) lives there, alongside the separate `frontend/` React app.
-4. Configure the commands (all run relative to the `backend/` root directory):
+
+This version is a **decoupled application**, so it deploys as **two Render services**
+plus a database — unlike the original single-service Django app on `main`:
+
+| # | Service | Render type | Source directory |
+|---|---------|-------------|------------------|
+| 1 | Django REST API + admin | **Web Service** | `backend/` |
+| 2 | React frontend | **Static Site** | `frontend/` |
+| 3 | Database | **PostgreSQL** | — |
+
+### Hosted URLs
+
+| Service | URL |
+|---------|-----|
+| Frontend (React) | _to be added after deployment_ |
+| Backend API | _to be added after deployment_ |
+
+### Service 1 — Django API (Web Service)
+
+Root Directory: `backend` (the Django project with `manage.py` and `requirements.txt`).
 
 ```bash
 # Build Command
@@ -640,19 +669,85 @@ python manage.py migrate
 gunicorn exhibit_guide_pwa.wsgi:application
 ```
 
-5. Set required environment variables in Render:
-- `DJANGO_SECRET_KEY`
-- `DJANGO_DEBUG=false`
-- `DATABASE_URL` (from Render Postgres)
-- `DJANGO_ALLOWED_HOSTS` (include your Render hostname)
-- `DJANGO_CSRF_TRUSTED_ORIGINS` (https origin for hosted domain)
+Environment variables:
 
-6. Deploy and wait for successful build/start logs.
-7. Open the hosted URL and execute the Hosted Accessibility Evidence run-through.
+| Variable | Value |
+|----------|-------|
+| `DJANGO_SECRET_KEY` | A newly generated secret (do not reuse another deployment's key) |
+| `DJANGO_DEBUG` | `false` |
+| `DATABASE_URL` | Connection string from the Render Postgres instance |
+| `DJANGO_ALLOWED_HOSTS` | This service's hostname |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://` origin of this service |
+| `DJANGO_CORS_ALLOWED_ORIGINS` | `https://` origin of the **frontend** static site |
+| `FRONTEND_URL` | `https://` origin of the **frontend** static site (used to build password-reset links) |
+
+### Service 2 — React frontend (Static Site)
+
+Root Directory: `frontend`.
+
+```bash
+# Build Command
+npm ci && npm run build
+
+# Publish Directory
+dist
+```
+
+Environment variable:
+
+| Variable | Value |
+|----------|-------|
+| `VITE_API_URL` | `https://` origin of the **backend** service, with no trailing slash |
+
+`VITE_API_URL` is read at **build time** — Vite compiles the value into the JavaScript
+bundle. Changing it requires a **new deploy**, not just a restart. The variable must keep
+its `VITE_` prefix to be exposed to application code.
+
+**Required rewrite rule** (Redirects/Rewrites tab):
+
+| Source | Destination | Action |
+|--------|-------------|--------|
+| `/*` | `/index.html` | Rewrite |
+
+Client-side routes such as `/dashboard` and `/exhibits/5` exist only inside React Router.
+Without this rule, loading or refreshing those URLs directly returns a 404.
+
+### Deployment order
+
+The two services reference each other's URLs, so deploy in this order:
+
+1. Create the Postgres instance.
+2. Create the backend Web Service (leave `DJANGO_CORS_ALLOWED_ORIGINS` and `FRONTEND_URL`
+   unset for now) and note its URL.
+3. Create the frontend Static Site with `VITE_API_URL` set to the backend URL; note its URL.
+4. Set `DJANGO_CORS_ALLOWED_ORIGINS` and `FRONTEND_URL` on the backend, then redeploy it.
+   Until this step is complete the frontend loads but every API call is blocked by CORS.
+5. Seed content from the backend service's shell: `python manage.py seed_data`.
+6. Create an admin account: `python manage.py createsuperuser`.
+
+### Verification after deploy
+
+1. Open the frontend URL and confirm the exhibit list renders.
+2. Open an exhibit, then refresh the page — a 404 indicates the rewrite rule is missing.
+3. Register an account and confirm redirection to the dashboard.
+4. Save an exhibit, then confirm it appears in the dashboard as `watching`.
+5. Open `<backend>/admin/` and confirm admin access.
 
 Notes:
 - `whitenoise`, `gunicorn`, and `dj-database-url` are already configured in this repository.
-- If deploy succeeds but pages fail, check host/origin environment values first.
+- If the frontend renders but shows no data, check `VITE_API_URL` and the backend's
+  `DJANGO_CORS_ALLOWED_ORIGINS` first; browser console errors distinguish the two.
+- On Render's free tier the backend spins down when idle, so the first request after a
+  quiet period can take 30–60 seconds.
+
+### Known deployment limitations
+- **Uploaded images are not persistent.** Render's filesystem is ephemeral, so exhibit
+  images uploaded through the staff interface are lost on redeploy. Seeded exhibits are
+  unaffected because they reference external image URLs. Persistent uploads would require
+  object storage (for example S3 or Cloudinary via `django-storages`).
+- **Password-reset emails are not delivered by default.** `EMAIL_BACKEND` defaults to the
+  console backend, which writes reset links to the service logs. Set `DJANGO_EMAIL_BACKEND`
+  to an SMTP backend with credentials to send real messages.
 
 ## Known Gaps and Next Steps
 To close remaining checklist gaps:
