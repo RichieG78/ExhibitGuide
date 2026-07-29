@@ -1,12 +1,19 @@
 """
-Management command to seed the database with dummy exhibit data for testing.
+Management command to seed the database with sample exhibit data.
 
 Usage:
     python manage.py seed_data
-    python manage.py seed_data --clear   # wipe existing exhibits first
+    python manage.py seed_data --clear                  # wipe existing exhibits first
+    python manage.py seed_data --username <existing>    # seed against a known account
+
+The seeded exhibits are owned by a user account. When DEBUG is on and that account is
+missing, one is created with a development password for convenience. On a deployed site
+(DEBUG off) the account must already exist — create it with `createsuperuser` first — so
+seeding can never introduce a default password on a public deployment.
 """
 
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from django.utils import timezone
 from exhibits.models import Artist, Artwork, Exhibit, Show
@@ -446,23 +453,35 @@ class Command(BaseCommand):
             count, _ = Exhibit.objects.all().delete()
             self.stdout.write(self.style.WARNING(f"Deleted {count} existing exhibit(s)."))
 
-        # Get or create the owner user
+        # Resolve the owner user. Creating one implies setting a known development
+        # password, which must never happen on a deployed site — so outside DEBUG the
+        # account has to exist already (created via `createsuperuser`).
         username = options["username"]
-        user, created = User.objects.get_or_create(
-            username=username,
-            defaults={
-                "email": f"{username}@example.com",
-                "is_staff": True,
-                "is_superuser": True,
-            },
-        )
-        if created:
+        user = User.objects.filter(username=username).first()
+
+        if user is None:
+            if not settings.DEBUG:
+                raise CommandError(
+                    f"No user named '{username}' exists.\n"
+                    "Seeding will not create one outside DEBUG, because that would set a "
+                    "default development password on a live site.\n\n"
+                    "Create the account first, then seed against it:\n"
+                    "    python manage.py createsuperuser\n"
+                    "    python manage.py seed_data --username <that username>"
+                )
+
+            user = User.objects.create(
+                username=username,
+                email=f"{username}@example.com",
+                is_staff=True,
+                is_superuser=True,
+            )
             # Local-only convenience password so evaluators can immediately sign in.
             user.set_password("password123")
             user.save()
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Created superuser '{username}' with password 'password123'."
+                    f"Created superuser '{username}' with the local development password."
                 )
             )
         else:
