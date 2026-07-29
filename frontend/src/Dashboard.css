@@ -12,7 +12,7 @@
   background: var(--dash-bg);
   color: var(--dash-cream);
   position: relative;
-  padding-bottom: 140px;
+  padding-bottom: 48px;
 }
 
 /* Top nav */
@@ -81,23 +81,14 @@
   color: var(--dash-muted);
 }
 
-.dash-featured {
-  padding: 0 24px 32px;
-}
-
-.dash-featured__eyebrow {
-  margin: 0 0 14px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--dash-gold-light);
-}
-
-.dash-featured__actions {
-  display: flex;
-  gap: 10px;
-  margin: 0 4px;
+.dash-notice {
+  margin: 0 24px 22px;
+  padding: 10px 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--dash-cream);
+  background: rgba(107, 79, 42, 0.2);
 }
 
 /* Filters */
@@ -235,58 +226,126 @@
   background: var(--dash-border);
 }
 
-/* Bottom nav */
-.dash-bottomnav {
+/* Enquiry modal */
+.dash-modal-overlay {
   position: fixed;
-  bottom: 32px;
-  left: 0;
-  right: 0;
+  inset: 0;
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  pointer-events: none;
-}
-.dash-bottomnav > * {
-  pointer-events: auto;
-}
-.dash-contact {
-  height: 48px;
-  padding: 0 18px;
-  border: none;
-  border-radius: 24px;
-  background: var(--dash-gold);
-  color: var(--dash-bg);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 10px 12px rgba(0, 0, 0, 0.2);
-}
-.dash-navpill {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 280px;
-  height: 64px;
-  padding: 0 16px;
-  border: 1px solid var(--dash-border);
-  border-radius: 32px;
-  background: rgba(26, 24, 20, 0.9);
-  backdrop-filter: blur(6px);
-}
-.dash-navitem {
-  width: 48px;
-  height: 48px;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  background: none;
+  padding: 18px;
+}
+
+.dash-modal {
+  width: min(440px, 100%);
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  background: #1f1b16;
+  padding: 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.38);
+}
+
+.dash-modal__title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.dash-modal__subtitle {
+  margin: 8px 0 16px;
   color: var(--dash-muted);
+  font-size: 13px;
+}
+
+.dash-modal__label {
+  display: block;
+  margin: 12px 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+}
+
+.dash-modal__textarea,
+.dash-modal__input {
+  width: 100%;
+  background: #15120f;
+  color: var(--dash-cream);
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  padding: 10px 11px;
+  font: inherit;
+}
+
+.dash-modal__textarea:focus,
+.dash-modal__input:focus {
+  outline: none;
+  border-color: var(--dash-gold-light);
+}
+
+.dash-modal__methods {
+  margin: 14px 0 10px;
+  padding: 10px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+}
+
+.dash-modal__methods legend {
+  padding: 0 5px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+}
+
+.dash-modal__methods label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 16px;
+  font-size: 13px;
+  color: var(--dash-cream);
+}
+
+.dash-modal__error {
+  margin: 10px 0 0;
+  color: #f6a7a7;
+  font-size: 12px;
+}
+
+.dash-modal__hint {
+  margin: 10px 0 0;
+  color: var(--dash-gold-light);
+  font-size: 12px;
+}
+
+.dash-modal__actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dash-modal__btn {
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-weight: 700;
   cursor: pointer;
 }
-.dash-navitem--active {
+
+.dash-modal__btn--ghost {
+  border: 1px solid var(--dash-border);
+  background: transparent;
   color: var(--dash-cream);
+}
+
+.dash-modal__btn--primary {
+  border: none;
+  background: var(--dash-gold);
+  color: #13100d;
 }

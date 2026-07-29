@@ -7,6 +7,7 @@ import './ExhibitDetail.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const PENDING_INTEREST_KEY = 'eg_interest_exhibit_id'
+const CONTACT_PREF_PROMPT_KEY = 'eg_contact_pref_prompt'
 
 // Fixed waveform bar heights (decorative), matching the Figma rhythm.
 const WAVEFORM = [
@@ -149,6 +150,7 @@ function ExhibitDetail({ id, qrId }) {
         setInterestNotice('You have already expressed interest in this exhibit.')
       } else {
         setInterestNotice('Your interest has been notified to the gallery.')
+        localStorage.setItem(CONTACT_PREF_PROMPT_KEY, '1')
       }
     } catch {
       setInterestNotice('Could not notify the gallery right now. Please try again.')
