@@ -234,8 +234,8 @@ WSGI_APPLICATION = 'exhibit_guide_pwa.wsgi.application'
 # Database selection strategy:
 # - Local/DEBUG mode defaults to SQLite.
 # - Optional local Postgres can be enabled with DJANGO_LOCAL_DATABASE_URL.
-# - Production mode uses DJANGO_PRODUCTION_DATABASE_URL when set.
-# - For compatibility with hosts like Render, production falls back to DATABASE_URL.
+# - Production mode prefers DATABASE_URL (Render standard), then
+#   DJANGO_PRODUCTION_DATABASE_URL as a compatibility fallback.
 def _database_url_for_current_mode():
     sqlite_default = f'sqlite:///{BASE_DIR / "db.sqlite3"}'
     local_database_url = os.getenv('DJANGO_LOCAL_DATABASE_URL', '').strip()
@@ -245,7 +245,15 @@ def _database_url_for_current_mode():
     if DEBUG:
         return local_database_url or sqlite_default
 
-    return production_database_url or legacy_database_url or sqlite_default
+    # In production, prefer DATABASE_URL because Render injects this by default.
+    selected = legacy_database_url or production_database_url
+    if selected:
+        return selected
+
+    raise ImproperlyConfigured(
+        'Production database URL is missing. Set DATABASE_URL (preferred) '
+        'or DJANGO_PRODUCTION_DATABASE_URL when DJANGO_DEBUG is False.'
+    )
 
 
 DATABASES = {
