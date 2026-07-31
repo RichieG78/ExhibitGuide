@@ -193,12 +193,15 @@ function Dashboard() {
     if (filter === 'Your scans') {
       return items.filter((item) => {
         const state = normalizeStatus(item.status)
-        return state === 'lead' || state === 'prospect'
+        return state === 'watching' || state === 'lead' || state === 'prospect'
       })
     }
 
     if (filter === 'Enquired') {
-      return items.filter((item) => normalizeStatus(item.status) === 'prospect')
+      return items.filter((item) => {
+        const state = normalizeStatus(item.status)
+        return state === 'lead' || state === 'prospect'
+      })
     }
 
     if (filter === 'Acquired') {
@@ -328,6 +331,8 @@ function Dashboard() {
     setSubmittingInquiry(true)
     setModalError('')
     try {
+      let profileSaveWarning = ''
+
       if (needsNameCapture) {
         const profileRes = await authFetch('/api/auth/profile/', {
           method: 'PATCH',
@@ -339,19 +344,19 @@ function Dashboard() {
         })
         const profileUpdate = await profileRes.json().catch(() => ({}))
         if (!profileRes.ok) {
-          throw new Error(
+          profileSaveWarning = (
             profileUpdate.detail ||
             profileUpdate.first_name?.[0] ||
             profileUpdate.last_name?.[0] ||
-            'Could not save your name to profile.'
+            'Your enquiry will still be sent, but we could not save your name to profile right now.'
           )
+        } else {
+          setProfileData((prev) => ({
+            ...prev,
+            first_name: profileUpdate.first_name || resolvedFirstName,
+            last_name: profileUpdate.last_name || resolvedLastName,
+          }))
         }
-
-        setProfileData((prev) => ({
-          ...prev,
-          first_name: profileUpdate.first_name || resolvedFirstName,
-          last_name: profileUpdate.last_name || resolvedLastName,
-        }))
       }
 
       const methodLabel = contactMethod === 'text' ? 'Text message' : contactMethod[0].toUpperCase() + contactMethod.slice(1)
@@ -377,11 +382,14 @@ function Dashboard() {
       }
 
       if (data.upgraded_to_prospect) {
-        setNotice('Purchase enquiry sent. Your interest has been flagged for gallery follow-up.')
+        const success = 'Purchase enquiry sent. Your interest has been flagged for gallery follow-up.'
+        setNotice(profileSaveWarning ? `${success} ${profileSaveWarning}` : success)
       } else if (data.already_expressed) {
-        setNotice('You have already made an enquiry for this exhibit.')
+        const success = 'You have already made an enquiry for this exhibit.'
+        setNotice(profileSaveWarning ? `${success} ${profileSaveWarning}` : success)
       } else {
-        setNotice('Your purchase enquiry has been sent to the gallery owner.')
+        const success = 'Your purchase enquiry has been sent to the gallery owner.'
+        setNotice(profileSaveWarning ? `${success} ${profileSaveWarning}` : success)
         if (!isContactPreferenceComplete(profileData)) {
           localStorage.setItem(CONTACT_PREF_PROMPT_KEY, '1')
           setPrefPromptShownThisVisit(false)
@@ -413,7 +421,7 @@ function Dashboard() {
       <section className="dash-greeting">
         <p className="dash-eyebrow">Welcome Back</p>
         <h1 className="dash-name">{displayName}</h1>
-        <p className="dash-subtitle">Your scans are saved, and your interest is flagged when you enquire.</p>
+        <p className="dash-subtitle">Your scan history appears here. Enquire on any artwork to notify the gallery.</p>
       </section>
 
       {autoSavingInterest && <p className="dash-notice">Adding scanned artwork to your watchlist…</p>}
@@ -489,12 +497,10 @@ function Dashboard() {
             <div>
               {currentStatus === 'prospect' ? (
                 <span className="dash-prospect">Enquired ✓ Gallery notified</span>
-              ) : currentStatus === 'lead' ? (
+              ) : currentStatus === 'lead' || currentStatus === 'watching' ? (
                 <button className="dash-enquire" type="button" onClick={() => openEnquiryModal(item)}>
                   Enquire about purchasing
                 </button>
-              ) : currentStatus === 'watching' ? (
-                <span className="dash-enquired">Saved for later</span>
               ) : (
                 <span className="dash-enquired">Acquired ✓</span>
               )}
