@@ -22,6 +22,12 @@ const IconBack = () => (
 const IconShare = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v13M8 7l4-4 4 4M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" /></svg>
 )
+const IconDashboard = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5" /><rect x="13" y="3" width="8" height="5" rx="1.5" /><rect x="13" y="10" width="8" height="11" rx="1.5" /><rect x="3" y="13" width="8" height="8" rx="1.5" /></svg>
+)
+const IconProfile = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21a8 8 0 0 0-16 0" /><circle cx="12" cy="8" r="4" /></svg>
+)
 const IconHeadphones = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2" /><rect x="3" y="14" width="4" height="7" rx="1.5" /><rect x="17" y="14" width="4" height="7" rx="1.5" /></svg>
 )
@@ -67,7 +73,6 @@ function ExhibitDetail({ id, qrId }) {
   const [notice, setNotice] = useState('')
   const [interestNotice, setInterestNotice] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [dwellStart] = useState(() => Date.now()) // for the dwell_time metric
   const audioRef = useRef(null)
   const interestBannerRef = useRef(null)
@@ -133,16 +138,6 @@ function ExhibitDetail({ id, qrId }) {
     }
   }
 
-  const saveToWatchlist = () => {
-    authFetch('/api/saved/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ exhibit: exhibit.id }),
-    }).then((res) => {
-      if (res.ok) setSaved(true)
-    })
-  }
-
   const openInterest = async () => {
     if (!user) {
       localStorage.setItem(PENDING_INTEREST_KEY, String(exhibit.id))
@@ -176,13 +171,27 @@ function ExhibitDetail({ id, qrId }) {
     <div className="detail-screen">
       {/* Header */}
       <header className="detail-header">
-        <Link to="/" className="detail-icon-btn" aria-label="Back to all exhibits">
-          <IconBack />
-        </Link>
+        <div className="detail-header__actions detail-header__actions--left">
+          <Link to="/" className="detail-icon-btn" aria-label="Back to all exhibits">
+            <IconBack />
+          </Link>
+        </div>
         <span className="detail-header__title">{exhibit.gallery_name || 'ExhibitGuide'}</span>
-        <button className="detail-icon-btn" type="button" aria-label="Share" onClick={() => setNotice('Sharing is coming in a later phase.')}>
-          <IconShare />
-        </button>
+        <div className="detail-header__actions detail-header__actions--right">
+          {user && (
+            <>
+              <Link to="/dashboard" className="detail-icon-btn" aria-label="Go to dashboard">
+                <IconDashboard />
+              </Link>
+              <Link to="/profile" className="detail-icon-btn" aria-label="Go to profile">
+                <IconProfile />
+              </Link>
+            </>
+          )}
+          <button className="detail-icon-btn" type="button" aria-label="Share" onClick={() => setNotice('Sharing is coming in a later phase.')}>
+            <IconShare />
+          </button>
+        </div>
       </header>
 
       {interestNotice && (
@@ -303,26 +312,6 @@ function ExhibitDetail({ id, qrId }) {
 
         {/* Actions */}
         <div className="detail-actions">
-          {user && (
-            <div className="detail-member-nav">
-              <Link to="/dashboard" className="btn-secondary detail-member-nav__link">
-                Go to dashboard
-              </Link>
-              <Link to="/profile" className="btn-secondary detail-member-nav__link">
-                Go to profile
-              </Link>
-            </div>
-          )}
-          {user &&
-            (saved ? (
-              <Link to="/dashboard" className="btn-secondary detail-saved-link">
-                ✓ Saved — view your collection
-              </Link>
-            ) : (
-              <button className="btn-secondary" type="button" onClick={saveToWatchlist}>
-                + Save to watchlist
-              </button>
-            ))}
           {notice && <p className="detail-notice">{notice}</p>}
         </div>
       </div>

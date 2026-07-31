@@ -36,6 +36,21 @@
   color: var(--ink-2);
 }
 
+.detail-header__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 36px;
+}
+
+.detail-header__actions--left {
+  justify-content: flex-start;
+}
+
+.detail-header__actions--right {
+  justify-content: flex-end;
+}
+
 .detail-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -304,18 +319,6 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.detail-member-nav {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.detail-member-nav__link {
-  display: block;
-  text-align: center;
-  text-decoration: none;
 }
 
 .btn-primary {
