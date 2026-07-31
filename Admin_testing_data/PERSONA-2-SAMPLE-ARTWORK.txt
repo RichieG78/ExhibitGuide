@@ -33,6 +33,11 @@
  Both routes are valid evidence. Pick whichever the assessment calls for —
  the admin CMS for Persona 2, or the staff screens to show the React path.
 
+ NOTE ON BRANCHES
+ The Django admin route works on both versions of the project. The React
+ staff screen at <frontend>/manage/new exists only on the
+ react-and-rest-version branch — on main, use the admin.
+
 ===============================================================================
  STEP 1 — ARTIST      (Admin → Exhibits → Artists → Add)
 ===============================================================================
