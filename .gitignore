@@ -19,6 +19,8 @@ __pycache__/
 
 # Environments
 .env
+.env.*
+*.env
 .venv
 venv/
 env/
@@ -36,3 +38,6 @@ tempCodeRunnerFile.py
 
 # Media
 staticfiles/
+# Local backups and editor config
+BackUp/
+.vscode/

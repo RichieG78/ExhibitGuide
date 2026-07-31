@@ -1,0 +1,186 @@
+===============================================================================
+ EXHIBITGUIDE — SAMPLE DATA FOR PERSONA 2 (GALLERY OWNER / ADMIN CMS FLOW)
+===============================================================================
+
+ Everything below is ready to copy and paste into the Django admin at
+ <backend>/admin/ (or the staff screens at <frontend>/manage/new).
+
+ Work through the four steps in order — each one depends on the previous.
+
+   Step 1  Artist    → Step 2  Show    → Step 3  Artwork    → Step 4  Exhibit
+
+ Image supplied alongside this file:  breaker-noon.jpg  (1600 × 1200, 564 KB)
+
+ ABOUT THIS PIECE
+ This is an original pop-art composition created for demonstration purposes —
+ Ben-Day dot fields, heavy black contours and flat primaries, in the idiom of
+ 1960s American pop art. It is not a reproduction of an existing painting, so
+ it can be uploaded, stored and displayed freely in your submission.
+
+ BEFORE YOU START — HOW THE TWO IMAGE FIELDS BEHAVE
+ An exhibit has both an "Image" upload and an "Image url" text field. The
+ application displays Image url first, and only falls back to the upload when
+ that is empty. Two consequences worth knowing:
+
+   • In the Django admin, Image url is a required field. You cannot leave it
+     blank there, so the uploaded file would never be the one displayed.
+     Paste an address instead (one is supplied in step 4).
+
+   • In the React staff screen at <frontend>/manage/new, Image url is
+     optional. That is the route to use if you want to demonstrate uploading
+     the supplied JPG and seeing it appear on the public page.
+
+ Both routes are valid evidence. Pick whichever the assessment calls for —
+ the admin CMS for Persona 2, or the staff screens to show the React path.
+
+ NOTE ON BRANCHES
+ The Django admin route works on both versions of the project. The React
+ staff screen at <frontend>/manage/new exists only on the
+ react-and-rest-version branch — on main, use the admin.
+
+===============================================================================
+ STEP 1 — ARTIST      (Admin → Exhibits → Artists → Add)
+===============================================================================
+
+Firstname:
+Hal
+
+Lastname:
+Brennan
+
+Nationality:
+American
+
+===============================================================================
+ STEP 2 — SHOW        (Admin → Exhibits → Shows → Add)
+===============================================================================
+
+Show name:
+Pop and Circumstance
+
+Start date:
+2026-09-04
+
+End date:
+2026-11-15
+
+===============================================================================
+ STEP 3 — ARTWORK     (Admin → Exhibits → Artworks → Add)
+===============================================================================
+
+Title:
+Breaker (Noon)
+
+Artist:
+Hal Brennan          ← select the artist created in step 1
+
+Medium:
+Oil and Magna on canvas
+
+Dimensions height:     (whole centimetres)
+173
+
+Dimensions width:      (whole centimetres)
+231
+
+Provenance:
+Painted in Brennan's Bowery studio, spring 1966. Acquired directly from the
+artist by the Leo Castelli Gallery, New York, the same year. Private
+collection, Chicago, from 1971. Consigned to Hargreaves Fine Art, London,
+2026. Exhibited: "Signals and Surfaces", Whitney Museum of American Art,
+1968; "The Printed Wave", Tate Liverpool, 2004.
+
+===============================================================================
+ STEP 4 — EXHIBIT     (Admin → Exhibits → Exhibits → Add)
+===============================================================================
+
+Gallery name:
+Hargreaves Fine Art
+
+Show:
+Pop and Circumstance     ← select the show created in step 2
+
+Artwork:
+Breaker (Noon)           ← select the artwork created in step 3
+
+Price:                   (whole units, no symbol or separators)
+1850000
+
+Currency:
+GBP
+
+Tldr:                    (one or two sentences — appears on cards and previews)
+A comic-strip sea at full noon: dotted sky, flat cobalt water, and a single
+white breaker frozen mid-collapse.
+
+Full text:               (the main description on the exhibit page)
+Brennan painted Breaker (Noon) at the height of his engagement with
+mechanical reproduction, enlarging the halftone dot until the printing
+process itself became the subject. The sky is a field of red Ben-Day dots
+over cadmium yellow; the sea a single unmodulated plane of cobalt. Between
+them runs a hard black horizon, drawn with the ruled confidence of a
+commercial illustrator rather than the wrist of a landscape painter.
+
+The breaking wave is the painting's argument. Where a Romantic seascape
+would dissolve foam into atmosphere, Brennan gives it a closed black
+contour and fills it with dots — spray rendered as newsprint. Critics of
+the period read this as parody. Later scholarship has been kinder,
+recognising in the work a genuine attempt to find the sublime inside the
+vocabulary of mass printing, and noting Brennan's careful, hand-painted
+irregularity in every dot.
+
+The work has become the most reproduced of Brennan's marine subjects, and
+is widely held to be the finest surviving canvas from his brief and prolific
+Bowery period.
+
+Audio url:               (required)
+https://www.moma.org/audio/playlist/1/tracks/99
+
+Video url:               (required)
+https://www.youtube.com/watch?v=ubTJI_UphPk
+
+Image:                   (upload — only displayed when Image url is empty,
+                          which is possible on <frontend>/manage/new only)
+breaker-noon.jpg
+
+Image url:               (REQUIRED in the Django admin — this is what shows)
+https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/1280px-Tsunami_by_hokusai_19th_century.jpg
+
+                          ↑ a stand-in so the admin form validates. Replace it
+                            with your own hosted address if you have one, or
+                            use the React staff screen to show the upload path.
+
+Publish date:
+2026-09-04 10:00:00
+
+User:
+your own staff account     ← select the account you signed in with
+
+-------------------------------------------------------------------------------
+ NOTE — the QR identifier is generated automatically when the exhibit is first
+ saved. It is read-only, and appears on the record after saving. Use it to
+ test the public scan route at  <frontend>/qr/<qr_identifier>
+-------------------------------------------------------------------------------
+
+===============================================================================
+ QUICK REFERENCE — FIELD SUMMARY
+===============================================================================
+
+ Artist      Hal Brennan, American
+ Show        Pop and Circumstance (4 Sep – 15 Nov 2026)
+ Artwork     Breaker (Noon) — Oil and Magna on canvas, 173 × 231 cm
+ Exhibit     Hargreaves Fine Art · GBP 1,850,000 · published 4 Sep 2026
+
+===============================================================================
+ WHAT TO CHECK AFTER SAVING
+===============================================================================
+
+ 1. The exhibit record shows a QR identifier once saved.
+ 2. The new work appears in the public exhibit list on the frontend.
+ 3. Opening it shows the title, artist, medium, dimensions and provenance.
+ 4. The scan route <frontend>/qr/<qr_identifier> opens the same page without
+    signing in.
+ 5. Expressing interest as a visitor creates a Prospect record, visible under
+    Admin → Users → Prospects.
+
+===============================================================================
