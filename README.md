@@ -72,6 +72,37 @@ Both versions are complete and independently deployed, so either can be assessed
 Note that the free hosting tier sleeps when idle — the first request after a quiet period
 may take 30–60 seconds to wake.
 
+### Why there are two versions, and why they are not merged
+
+**Why two versions exist.** Version 1 delivered the product as a conventional Django
+application and validated the core visitor journey — scan a QR code, read or listen to the
+work, express interest. Version 2 then migrated that same product to a decoupled
+architecture: a Django REST API serving a separate React single-page application. The
+migration is itself part of the submitted work, so the starting point had to remain intact
+and inspectable rather than being overwritten. Keeping both allows the two architectures to
+be compared directly, and the ten-phase route between them is documented in
+`DJANGO_TO_REACT_MIGRATION_PLAN.md` on the `react-and-rest-version` branch.
+
+**Why they are deliberately not merged.** The branches are parallel deliverables, not a
+feature branch waiting to be integrated. Merging was considered and rejected for four
+reasons:
+
+1. **A merge would break the live Version 1 application.** This branch auto-deploys to
+   Render. Version 2 removed the templates, template views, forms and the `crispy_forms`
+   dependency that Version 1 renders its pages with, and renamed `exhibit_guide_pwa/` to
+   `backend/`. Merging would delete the code the running site depends on.
+2. **The two versions are assessed independently.** Both are documented as separately
+   gradable. Merging would collapse that structure and leave only the later architecture as
+   evidence, discarding the Django-template implementation entirely.
+3. **Neither version supersedes the other.** A merge asserts that one line of work replaces
+   another. Here both are finished products that share an origin, and branches are the
+   appropriate mechanism for maintaining parallel lines of work.
+4. **The submitted state is pinned by tags.** `v1.0` marks this branch and `v2.0` marks
+   `react-and-rest-version`, so the assessed state of each remains retrievable even if
+   development continues.
+
+In short: the two-branch structure is the deliverable, not an unfinished merge.
+
 ## Assessor Quick Start (Recommended Test Order)
 This section is designed for first-time assessors.
 
