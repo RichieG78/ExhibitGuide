@@ -74,10 +74,14 @@ class Exhibit(models.Model):
     currency = models.CharField(max_length=3, choices=CurrencyChoices.choices, default=CurrencyChoices.USD)
     tldr = models.TextField()
     full_text = models.TextField()
-    audio_url = models.URLField()
-    video_url = models.URLField()
+    # Django's URLField defaults to 200 characters, which is too short for real
+    # image sources: a Wikimedia thumbnail repeats the filename in the path and
+    # commonly exceeds 200. Widened so full source URLs can be stored directly,
+    # without depending on a third-party link shortener.
+    audio_url = models.URLField(max_length=500)
+    video_url = models.URLField(max_length=500)
     image = models.ImageField(default='exhibit_images/default.jpg', upload_to='exhibit_images/', null=True, blank=True)
-    image_url = models.URLField()
+    image_url = models.URLField(max_length=500)
     qr_identifier = models.PositiveIntegerField(
         unique=True,
         db_index=True,
