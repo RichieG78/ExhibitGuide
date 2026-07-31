@@ -56,7 +56,7 @@ function PasswordResetConfirmPage() {
 
         {!hasValidLinkParams ? (
           <>
-            <p className="auth-error">Reset link is missing required details.</p>
+            <p className="auth-error" role="alert">Reset link is missing required details.</p>
             <p className="auth-alt">
               <Link to="/password-reset">Request a new link</Link>
             </p>
@@ -72,6 +72,8 @@ function PasswordResetConfirmPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoFocus
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? 'password-reset-confirm-error' : undefined}
               />
             </label>
             <label className="auth-label">
@@ -82,11 +84,13 @@ function PasswordResetConfirmPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? 'password-reset-confirm-error' : undefined}
               />
             </label>
 
-            {error && <p className="auth-error">{error}</p>}
-            {status === 'done' && <p className="auth-success">Password updated. Redirecting to login…</p>}
+            {error && <p id="password-reset-confirm-error" className="auth-error" role="alert" aria-live="assertive">{error}</p>}
+            {status === 'done' && <p className="auth-success" role="status" aria-live="polite">Password updated. Redirecting to login…</p>}
 
             <button className="auth-submit" type="submit" disabled={status === 'submitting' || status === 'done'}>
               {status === 'submitting' ? 'Updating…' : 'Update password'}

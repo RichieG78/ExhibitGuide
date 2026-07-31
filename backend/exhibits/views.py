@@ -4,8 +4,15 @@ The public server-rendered pages (scan, exhibit preview) were retired when the
 React frontend took over; this module is now API-only.
 """
 
+import json
+from urllib.error import URLError
+from urllib.parse import quote_plus
+from urllib.request import Request, urlopen
+
 from django.utils import timezone
-from rest_framework import generics, permissions, viewsets
+from rest_framework import generics, permissions, status, viewsets
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from users.models import Prospect
 
@@ -105,3 +112,117 @@ class ProspectCreateView(generics.CreateAPIView):
 	queryset = Prospect.objects.all()
 	permission_classes = [permissions.AllowAny]
 	authentication_classes = []
+
+
+def _fetch_json(url):
+	"""Fetch JSON from a third-party API with a short timeout."""
+	request = Request(url, headers={'User-Agent': 'ExhibitGuide/1.0'})
+	with urlopen(request, timeout=6) as response:
+		payload = response.read().decode('utf-8')
+		return json.loads(payload)
+
+
+class ExchangeRatesView(APIView):
+	"""Public exchange-rate proxy using Frankfurter (third-party API)."""
+
+	permission_classes = [permissions.AllowAny]
+	authentication_classes = []
+
+	def get(self, request):
+		base = (request.query_params.get('base') or 'USD').upper().strip()
+		symbols_raw = (request.query_params.get('symbols') or 'EUR,GBP').upper()
+		symbols = [symbol.strip() for symbol in symbols_raw.split(',') if symbol.strip()]
+
+		if not base.isalpha() or len(base) != 3:
+			return Response({'detail': 'Invalid base currency.'}, status=status.HTTP_400_BAD_REQUEST)
+
+		valid_symbols = [symbol for symbol in symbols if symbol.isalpha() and len(symbol) == 3]
+		if not valid_symbols:
+			return Response({'detail': 'At least one valid target currency is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+		url = (
+			'https://api.frankfurter.app/latest'
+			f'?from={base}&to={",".join(valid_symbols)}'
+		)
+
+		try:
+			data = _fetch_json(url)
+		except (URLError, TimeoutError, json.JSONDecodeError):
+			return Response(
+				{'detail': 'Exchange-rate service is currently unavailable.'},
+				status=status.HTTP_502_BAD_GATEWAY,
+			)
+
+		return Response(
+			{
+				'provider': 'frankfurter',
+				'base': data.get('base', base),
+				'date': data.get('date'),
+				'rates': data.get('rates', {}),
+			}
+		)
+
+
+class MuseumSearchView(APIView):
+	"""Public museum lookup proxy using The Met Collection API."""
+
+	permission_classes = [permissions.AllowAny]
+	authentication_classes = []
+
+	def get(self, request):
+		query = (request.query_params.get('q') or '').strip()
+		limit_raw = request.query_params.get('limit') or '3'
+
+		if not query:
+			return Response({'detail': 'Query parameter q is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			limit = max(1, min(int(limit_raw), 6))
+		except ValueError:
+			limit = 3
+
+		search_url = (
+			'https://collectionapi.metmuseum.org/public/collection/v1/search'
+			f'?hasImages=true&q={quote_plus(query)}'
+		)
+
+		try:
+			search_data = _fetch_json(search_url)
+		except (URLError, TimeoutError, json.JSONDecodeError):
+			return Response(
+				{'detail': 'Museum data service is currently unavailable.'},
+				status=status.HTTP_502_BAD_GATEWAY,
+			)
+
+		object_ids = (search_data.get('objectIDs') or [])[:limit]
+		results = []
+		for object_id in object_ids:
+			object_url = (
+				'https://collectionapi.metmuseum.org/public/collection/v1/objects/'
+				f'{object_id}'
+			)
+			try:
+				item = _fetch_json(object_url)
+			except (URLError, TimeoutError, json.JSONDecodeError):
+				continue
+
+			results.append(
+				{
+					'object_id': item.get('objectID'),
+					'title': item.get('title'),
+					'artist': item.get('artistDisplayName'),
+					'date': item.get('objectDate'),
+					'image': item.get('primaryImageSmall') or item.get('primaryImage'),
+					'url': item.get('objectURL'),
+					'museum': item.get('repository'),
+				}
+			)
+
+		return Response(
+			{
+				'provider': 'the-met',
+				'query': query,
+				'total_found': search_data.get('total', 0),
+				'results': results,
+			}
+		)

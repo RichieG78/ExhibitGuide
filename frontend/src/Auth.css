@@ -181,3 +181,13 @@
 .auth-linkbtn--back {
   justify-self: start;
 }
+
+.auth-input:focus-visible,
+.auth-textarea:focus-visible,
+.auth-submit:focus-visible,
+.auth-linkbtn:focus-visible,
+.auth-alt a:focus-visible,
+.auth-brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import './InterestModal.css'
@@ -14,6 +14,9 @@ const IconClose = () => (
 function InterestModal({ exhibit, dwellStart, onClose, onSuccess }) {
   const navigate = useNavigate()
   const { user, register } = useAuth()
+  const sheetRef = useRef(null)
+  const emailInputRef = useRef(null)
+  const returnFocusRef = useRef(null)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -72,6 +75,52 @@ function InterestModal({ exhibit, dwellStart, onClose, onSuccess }) {
     }
   }
 
+  useEffect(() => {
+    returnFocusRef.current = document.activeElement
+    const frame = window.requestAnimationFrame(() => {
+      emailInputRef.current?.focus()
+    })
+
+    const onKeyDown = (event) => {
+      if (!sheetRef.current) return
+
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+        return
+      }
+
+      if (event.key !== 'Tab') return
+
+      const focusable = sheetRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      const nodes = Array.from(focusable).filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true')
+      if (nodes.length === 0) return
+
+      const first = nodes[0]
+      const last = nodes[nodes.length - 1]
+      const active = document.activeElement
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', onKeyDown)
+      if (returnFocusRef.current && typeof returnFocusRef.current.focus === 'function') {
+        returnFocusRef.current.focus()
+      }
+    }
+  }, [onClose])
+
   return (
     <div
       className="modal-overlay"
@@ -79,10 +128,16 @@ function InterestModal({ exhibit, dwellStart, onClose, onSuccess }) {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="modal-sheet" role="dialog" aria-modal="true" aria-label="Express your interest">
+      <div
+        ref={sheetRef}
+        className="modal-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="interest-modal-title"
+      >
         <div className="modal-header">
           <span className="modal-handle" aria-hidden="true" />
-          <h2 className="modal-title">Express your interest</h2>
+          <h2 id="interest-modal-title" className="modal-title">Express your interest</h2>
           <button className="modal-close" type="button" onClick={onClose} aria-label="Close">
             <IconClose />
           </button>
@@ -94,32 +149,46 @@ function InterestModal({ exhibit, dwellStart, onClose, onSuccess }) {
         </p>
 
         <form onSubmit={submit}>
+          <label className="modal-label" htmlFor="interest-email">Email</label>
           <input
+            id="interest-email"
+            ref={emailInputRef}
             className="modal-input"
             type="email"
             required
             placeholder="your@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            autoFocus
             disabled={Boolean(user)}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? 'interest-modal-error' : undefined}
           />
           {!user && (
-            <input
-              className="modal-input"
-              type="password"
-              required
-              placeholder="Create password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <>
+              <label className="modal-label" htmlFor="interest-password">Password</label>
+              <input
+                id="interest-password"
+                className="modal-input"
+                type="password"
+                required
+                placeholder="Create password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? 'interest-modal-error' : undefined}
+              />
+            </>
           )}
           <button className="modal-submit" type="submit" disabled={submitting}>
             {submitting ? 'Continuing…' : user ? 'Continue to dashboard' : 'Create account and continue'}
           </button>
         </form>
 
-        {error && <p className="modal-error">{error}</p>}
+        {error && (
+          <p id="interest-modal-error" className="modal-error" role="alert" aria-live="assertive">
+            {error}
+          </p>
+        )}
 
         {!user && (
           <p className="modal-signin">

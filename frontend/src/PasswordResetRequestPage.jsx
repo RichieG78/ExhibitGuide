@@ -49,12 +49,14 @@ function PasswordResetRequestPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoFocus
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? 'password-reset-request-error' : undefined}
             />
           </label>
 
-          {error && <p className="auth-error">{error}</p>}
+          {error && <p id="password-reset-request-error" className="auth-error" role="alert" aria-live="assertive">{error}</p>}
           {status === 'done' && (
-            <p className="auth-success">
+            <p className="auth-success" role="status" aria-live="polite">
               If that email exists, a password reset link has been sent.
             </p>
           )}

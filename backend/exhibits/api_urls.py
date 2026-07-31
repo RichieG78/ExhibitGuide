@@ -12,8 +12,10 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ArtistViewSet,
     ArtworkViewSet,
+    ExchangeRatesView,
     ExhibitByQrView,
     ExhibitViewSet,
+    MuseumSearchView,
     ProspectCreateView,
     ShowViewSet,
 )
@@ -35,4 +37,7 @@ urlpatterns = [
 ] + router.urls + [
     # Public lead capture (POST): a visitor expressing interest in an exhibit.
     path('interest/', ProspectCreateView.as_view(), name='interest'),
+    # Public third-party integrations used by the frontend.
+    path('external/exchange-rates/', ExchangeRatesView.as_view(), name='external_exchange_rates'),
+    path('external/museum-search/', MuseumSearchView.as_view(), name='external_museum_search'),
 ]

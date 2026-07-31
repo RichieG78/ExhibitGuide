@@ -79,6 +79,14 @@
   color: var(--ink-soft);
 }
 
+.modal-label {
+  display: block;
+  margin: 10px 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
 .modal-input {
   width: 100%;
   height: 46px;
@@ -99,6 +107,14 @@
 .modal-input:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.modal-input:focus-visible,
+.modal-submit:focus-visible,
+.modal-close:focus-visible,
+.modal-signin__link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .modal-submit {

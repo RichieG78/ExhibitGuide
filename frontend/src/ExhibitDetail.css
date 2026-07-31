@@ -68,6 +68,16 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
+.detail-icon-btn:focus-visible,
+.tab:focus-visible,
+.audio-play:focus-visible,
+.watch-link:focus-visible,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Success banner (after submitting interest) */
 .detail-banner {
   display: flex;
@@ -291,6 +301,22 @@
   margin-top: 8px;
 }
 
+.panel-subtext {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.panel-conversions {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
 .panel-interest-btn {
   margin-top: 14px;
   width: 100%;
@@ -298,6 +324,39 @@
 
 .panel-description-block {
   margin-top: 14px;
+}
+
+.museum-results {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.museum-results__item {
+  padding: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.museum-results__link,
+.museum-results__title {
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.museum-results__link:hover {
+  text-decoration: underline;
+}
+
+.museum-results__meta {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .watch-link {

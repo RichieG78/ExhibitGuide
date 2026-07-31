@@ -82,6 +82,9 @@ function Dashboard() {
   const [savingPreference, setSavingPreference] = useState(false)
   const [prefPromptShownThisVisit, setPrefPromptShownThisVisit] = useState(false)
   const autoSavedRef = useRef(false)
+  const enquiryModalRef = useRef(null)
+  const preferenceModalRef = useRef(null)
+  const modalReturnFocusRef = useRef(null)
 
   const interestExhibitId = useMemo(() => {
     const fromQuery = searchParams.get('interest_exhibit')
@@ -182,6 +185,63 @@ function Dashboard() {
       })
       .finally(() => setAutoSavingInterest(false))
   }, [interestExhibitId, status, items, authFetch, load])
+
+  useEffect(() => {
+    if (!modalOpen && !prefModalOpen) return
+
+    const activeModal = modalOpen ? enquiryModalRef.current : preferenceModalRef.current
+    if (!activeModal) return
+
+    modalReturnFocusRef.current = document.activeElement
+    const frame = window.requestAnimationFrame(() => {
+      const firstField = activeModal.querySelector('input, textarea, button, [href], [tabindex]:not([tabindex="-1"])')
+      firstField?.focus()
+    })
+
+    const onKeyDown = (event) => {
+      const currentModal = modalOpen ? enquiryModalRef.current : preferenceModalRef.current
+      if (!currentModal) return
+
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        if (modalOpen) {
+          closeEnquiryModal()
+        } else {
+          closePreferenceModal()
+        }
+        return
+      }
+
+      if (event.key !== 'Tab') return
+
+      const focusable = currentModal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      const nodes = Array.from(focusable).filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true')
+      if (nodes.length === 0) return
+
+      const first = nodes[0]
+      const last = nodes[nodes.length - 1]
+      const active = document.activeElement
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', onKeyDown)
+      if (modalReturnFocusRef.current && typeof modalReturnFocusRef.current.focus === 'function') {
+        modalReturnFocusRef.current.focus()
+      }
+    }
+  }, [modalOpen, prefModalOpen])
 
   const showOptions = useMemo(() => {
     const names = Array.from(new Set(items.map((item) => item.show_name).filter(Boolean)))
@@ -410,6 +470,14 @@ function Dashboard() {
 
   const profileFirstName = (profileData.first_name || '').trim()
   const displayName = profileFirstName || user?.username || 'Collector'
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+    navigate('/')
+  }
+
   const handleLogout = () => {
     logout()
     navigate('/')
@@ -418,7 +486,7 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <header className="dash-topnav">
-        <button className="dash-iconbtn" type="button" onClick={() => navigate('/')} aria-label="Back">
+        <button className="dash-iconbtn" type="button" onClick={handleBack} aria-label="Back">
           <IconBack />
         </button>
         <span className="dash-topnav__title">Saved Exhibits</span>
@@ -438,8 +506,8 @@ function Dashboard() {
         <p className="dash-subtitle">Your scan history appears here. Enquire on any artwork to notify the gallery.</p>
       </section>
 
-      {autoSavingInterest && <p className="dash-notice">Adding scanned artwork to your watchlist…</p>}
-      {notice && <p className="dash-notice">{notice}</p>}
+      {autoSavingInterest && <p className="dash-notice" role="status" aria-live="polite">Adding scanned artwork to your watchlist…</p>}
+      {notice && <p className="dash-notice" role="status" aria-live="polite">{notice}</p>}
 
       <div className="dash-filters">
         {FILTERS.map((f) => (
@@ -473,8 +541,8 @@ function Dashboard() {
       )}
 
       <div className="dash-feed">
-        {status === 'loading' && <p className="dash-status">Loading your collection…</p>}
-        {status === 'error' && <p className="dash-status">Could not load: {error}</p>}
+        {status === 'loading' && <p className="dash-status" role="status" aria-live="polite">Loading your collection…</p>}
+        {status === 'error' && <p className="dash-status" role="alert">Could not load: {error}</p>}
         {status === 'ready' && items.length === 0 && (
           <p className="dash-status">
             You haven't saved any works yet.{' '}
@@ -524,8 +592,14 @@ function Dashboard() {
 
       {modalOpen && activeInquiryItem && (
         <div className="dash-modal-overlay" onClick={(event) => event.target === event.currentTarget && closeEnquiryModal()}>
-          <div className="dash-modal" role="dialog" aria-modal="true" aria-label="Send enquiry to gallery">
-            <h2 className="dash-modal__title">Enquire About {activeInquiryItem.title || activeInquiryItem.artist}</h2>
+          <div
+            ref={enquiryModalRef}
+            className="dash-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="enquiry-modal-title"
+          >
+            <h2 id="enquiry-modal-title" className="dash-modal__title">Enquire About {activeInquiryItem.title || activeInquiryItem.artist}</h2>
             <p className="dash-modal__subtitle">Signal purchase intent and tell the gallery how you would like to be contacted.</p>
 
             <form onSubmit={submitEnquiry}>
@@ -539,6 +613,7 @@ function Dashboard() {
                     placeholder="First name"
                     value={contactFirstName}
                     onChange={(event) => setContactFirstName(event.target.value)}
+                    required
                   />
 
                   <label className="dash-modal__label" htmlFor="enquiry-last-name">Last name</label>
@@ -549,6 +624,7 @@ function Dashboard() {
                     placeholder="Last name"
                     value={contactLastName}
                     onChange={(event) => setContactLastName(event.target.value)}
+                    required
                   />
                 </>
               )}
@@ -605,6 +681,8 @@ function Dashboard() {
                 placeholder="name@example.com"
                 value={contactEmail}
                 onChange={(event) => setContactEmail(event.target.value)}
+                aria-invalid={Boolean(modalError)}
+                aria-describedby={modalError ? 'enquiry-modal-error' : undefined}
               />
 
               <label className="dash-modal__label" htmlFor="enquiry-phone">Phone</label>
@@ -615,9 +693,15 @@ function Dashboard() {
                 placeholder="Add phone number when selecting phone or text"
                 value={contactPhone}
                 onChange={(event) => setContactPhone(event.target.value)}
+                aria-invalid={Boolean(modalError)}
+                aria-describedby={modalError ? 'enquiry-modal-error' : undefined}
               />
 
-              {modalError && <p className="dash-modal__error">{modalError}</p>}
+              {modalError && (
+                <p id="enquiry-modal-error" className="dash-modal__error" role="alert" aria-live="assertive">
+                  {modalError}
+                </p>
+              )}
 
               <div className="dash-modal__actions">
                 <button className="dash-modal__btn dash-modal__btn--ghost" type="button" onClick={closeEnquiryModal}>
@@ -634,8 +718,14 @@ function Dashboard() {
 
       {prefModalOpen && (
         <div className="dash-modal-overlay" onClick={(event) => event.target === event.currentTarget && closePreferenceModal()}>
-          <div className="dash-modal" role="dialog" aria-modal="true" aria-label="Save contact preference">
-            <h2 className="dash-modal__title">Save Contact Preference</h2>
+          <div
+            ref={preferenceModalRef}
+            className="dash-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="preference-modal-title"
+          >
+            <h2 id="preference-modal-title" className="dash-modal__title">Save Contact Preference</h2>
             <p className="dash-modal__subtitle">
               Choose how you would like gallery owners to contact you for future enquiries. You can change this any time in your profile.
             </p>
@@ -683,6 +773,8 @@ function Dashboard() {
                 placeholder="name@example.com"
                 value={prefEmail}
                 onChange={(event) => setPrefEmail(event.target.value)}
+                aria-invalid={Boolean(prefError)}
+                aria-describedby={prefError ? 'pref-modal-error' : undefined}
               />
 
               <label className="dash-modal__label" htmlFor="pref-phone">Phone</label>
@@ -693,13 +785,19 @@ function Dashboard() {
                 placeholder="Add phone number when selecting phone or text"
                 value={prefPhone}
                 onChange={(event) => setPrefPhone(event.target.value)}
+                aria-invalid={Boolean(prefError)}
+                aria-describedby={prefError ? 'pref-modal-error' : undefined}
               />
 
               {(prefMethod === 'phone' || prefMethod === 'text') && (
                 <p className="dash-modal__hint">This phone number will be saved in your profile for future enquiries.</p>
               )}
 
-              {prefError && <p className="dash-modal__error">{prefError}</p>}
+              {prefError && (
+                <p id="pref-modal-error" className="dash-modal__error" role="alert" aria-live="assertive">
+                  {prefError}
+                </p>
+              )}
 
               <div className="dash-modal__actions">
                 <button className="dash-modal__btn dash-modal__btn--ghost" type="button" onClick={closePreferenceModal}>

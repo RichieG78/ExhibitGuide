@@ -94,6 +94,7 @@ function ExhibitImage({ exhibit, className }) {
     : [exhibit.image_url, exhibit.image].filter(Boolean)
   const sources = expandImageSources(rawSources)
   const [index, setIndex] = useState(0)
+  const altText = [exhibit.title, exhibit.artist].filter(Boolean).join(' by ') || 'Exhibit image'
 
   // Ran out of sources to try (or there were none): show a placeholder.
   if (index >= sources.length) {
@@ -108,7 +109,7 @@ function ExhibitImage({ exhibit, className }) {
     <img
       className={className}
       src={sources[index]}
-      alt={exhibit.artist || 'Exhibit'}
+      alt={altText}
       loading="lazy"
       decoding="async"
       onError={() => setIndex((current) => current + 1)}

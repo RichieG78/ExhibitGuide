@@ -45,17 +45,17 @@ function RegisterPage() {
         <form onSubmit={submit}>
           <label className="auth-label">
             Username
-            <input className="auth-input" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
+            <input className="auth-input" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus aria-invalid={Boolean(error)} aria-describedby={error ? 'register-error' : undefined} />
           </label>
           <label className="auth-label">
             Email
-            <input className="auth-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input className="auth-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required aria-invalid={Boolean(error)} aria-describedby={error ? 'register-error' : undefined} />
           </label>
           <label className="auth-label">
             Password
-            <input className="auth-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input className="auth-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required aria-invalid={Boolean(error)} aria-describedby={error ? 'register-error' : undefined} />
           </label>
-          {error && <p className="auth-error">{error}</p>}
+          {error && <p id="register-error" className="auth-error" role="alert" aria-live="assertive">{error}</p>}
           <button className="auth-submit" type="submit" disabled={submitting}>
             {submitting ? 'Creating…' : 'Create account'}
           </button>

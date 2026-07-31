@@ -334,6 +334,18 @@
   border-color: var(--dash-gold-light);
 }
 
+.dash-iconbtn:focus-visible,
+.dash-avatar:focus-visible,
+.dash-pill:focus-visible,
+.dash-card__media:focus-visible,
+.dash-linkbtn:focus-visible,
+.dash-modal__btn:focus-visible,
+.dash-modal__textarea:focus-visible,
+.dash-modal__input:focus-visible {
+  outline: 2px solid #e6c58b;
+  outline-offset: 2px;
+}
+
 .dash-modal__methods {
   margin: 14px 0 10px;
   padding: 10px;

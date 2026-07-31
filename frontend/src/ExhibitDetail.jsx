@@ -60,6 +60,14 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
+function formatMoney(amount, currency) {
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
+  } catch {
+    return `${currency} ${amount}`
+  }
+}
+
 function getDefaultTab() {
   return 'read'
 }
@@ -77,6 +85,10 @@ function ExhibitDetail({ id, qrId }) {
   const [notice, setNotice] = useState('')
   const [interestNotice, setInterestNotice] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [ratesStatus, setRatesStatus] = useState('idle') // idle | loading | ready | error
+  const [ratesData, setRatesData] = useState({})
+  const [museumStatus, setMuseumStatus] = useState('idle') // idle | loading | ready | error
+  const [museumResults, setMuseumResults] = useState([])
   const [dwellStart] = useState(() => Date.now()) // for the dwell_time metric
   const audioRef = useRef(null)
   const interestBannerRef = useRef(null)
@@ -85,6 +97,57 @@ function ExhibitDetail({ id, qrId }) {
     // Reset initial tab when navigating between exhibits/QR routes.
     setTab(getDefaultTab())
   }, [id, qrId])
+
+  useEffect(() => {
+    if (!exhibit) return
+
+    const baseCurrency = (exhibit.currency || 'USD').toUpperCase()
+    const targets = ['USD', 'EUR', 'GBP'].filter((code) => code !== baseCurrency)
+
+    if (!exhibit.price || targets.length === 0) {
+      setRatesStatus('idle')
+      setRatesData({})
+    } else {
+      setRatesStatus('loading')
+      fetch(
+        `${API_BASE}/api/external/exchange-rates/?base=${encodeURIComponent(baseCurrency)}&symbols=${encodeURIComponent(targets.join(','))}`
+      )
+        .then((response) => {
+          if (!response.ok) throw new Error('Could not load exchange rates')
+          return response.json()
+        })
+        .then((data) => {
+          setRatesData(data.rates || {})
+          setRatesStatus('ready')
+        })
+        .catch(() => {
+          setRatesData({})
+          setRatesStatus('error')
+        })
+    }
+
+    const queryText = [exhibit.artist, exhibit.title].filter(Boolean).join(' ').trim()
+    if (!queryText) {
+      setMuseumStatus('idle')
+      setMuseumResults([])
+      return
+    }
+
+    setMuseumStatus('loading')
+    fetch(`${API_BASE}/api/external/museum-search/?q=${encodeURIComponent(queryText)}&limit=3`)
+      .then((response) => {
+        if (!response.ok) throw new Error('Could not load museum references')
+        return response.json()
+      })
+      .then((data) => {
+        setMuseumResults(data.results || [])
+        setMuseumStatus('ready')
+      })
+      .catch(() => {
+        setMuseumResults([])
+        setMuseumStatus('error')
+      })
+  }, [exhibit])
 
   useEffect(() => {
     if (!user || !interestNotice || !interestBannerRef.current) return
@@ -129,6 +192,10 @@ function ExhibitDetail({ id, qrId }) {
       ? `${exhibit.dimensions_height} × ${exhibit.dimensions_width} cm`
       : null
   const metaLine = [exhibit.medium, dimensions, year].filter(Boolean).join(' · ')
+  const basePriceText = exhibit.price ? formatMoney(exhibit.price, exhibit.currency || 'USD') : 'Price on request'
+  const convertedPrices = Object.entries(ratesData)
+    .filter(([, rate]) => typeof rate === 'number' && exhibit.price)
+    .map(([code, rate]) => ({ code, value: formatMoney(exhibit.price * rate, code) }))
 
   const togglePlay = () => {
     const el = audioRef.current
@@ -228,14 +295,41 @@ function ExhibitDetail({ id, qrId }) {
       {/* Body */}
       <div className="detail-body">
         {/* Tabs */}
-        <div className="tabs" role="tablist">
-          <button className={`tab ${tab === 'listen' ? 'tab--active' : ''}`} onClick={() => setTab('listen')} type="button">
+        <div className="tabs" role="tablist" aria-label="Exhibit content sections">
+          <button
+            id="tab-listen"
+            role="tab"
+            aria-selected={tab === 'listen'}
+            aria-controls="tabpanel-listen"
+            tabIndex={tab === 'listen' ? 0 : -1}
+            className={`tab ${tab === 'listen' ? 'tab--active' : ''}`}
+            onClick={() => setTab('listen')}
+            type="button"
+          >
             <IconHeadphones /> Listen
           </button>
-          <button className={`tab ${tab === 'read' ? 'tab--active' : ''}`} onClick={() => setTab('read')} type="button">
+          <button
+            id="tab-read"
+            role="tab"
+            aria-selected={tab === 'read'}
+            aria-controls="tabpanel-read"
+            tabIndex={tab === 'read' ? 0 : -1}
+            className={`tab ${tab === 'read' ? 'tab--active' : ''}`}
+            onClick={() => setTab('read')}
+            type="button"
+          >
             <IconDoc /> Read
           </button>
-          <button className={`tab ${tab === 'watch' ? 'tab--active' : ''}`} onClick={() => setTab('watch')} type="button">
+          <button
+            id="tab-watch"
+            role="tab"
+            aria-selected={tab === 'watch'}
+            aria-controls="tabpanel-watch"
+            tabIndex={tab === 'watch' ? 0 : -1}
+            className={`tab ${tab === 'watch' ? 'tab--active' : ''}`}
+            onClick={() => setTab('watch')}
+            type="button"
+          >
             <IconVideo /> Watch
           </button>
         </div>
@@ -247,7 +341,12 @@ function ExhibitDetail({ id, qrId }) {
 
         {/* Tab panels */}
         {tab === 'listen' && (
-          <div className="audio-card">
+          <div
+            id="tabpanel-listen"
+            role="tabpanel"
+            aria-labelledby="tab-listen"
+            className="audio-card"
+          >
             <div className="audio-card__row">
               <button className="audio-play" type="button" onClick={togglePlay} aria-label={playing ? 'Pause' : 'Play'} disabled={!exhibit.audio_url}>
                 {playing ? <IconPause /> : <IconPlay />}
@@ -279,12 +378,28 @@ function ExhibitDetail({ id, qrId }) {
 
         {tab === 'read' && (
           <>
-            <div className="panel-card">
+            <div
+              id="tabpanel-read"
+              role="tabpanel"
+              aria-labelledby="tab-read"
+              className="panel-card"
+            >
               <p className="panel-label">About the work</p>
               <div className="panel-info-stack">
                 <div className="panel-info-block">
                   <p className="panel-info-title">Price</p>
-                  <p className="panel-text panel-text--tight">{exhibit.price ? `${exhibit.currency} ${exhibit.price.toLocaleString()}` : 'Price on request'}</p>
+                  <p className="panel-text panel-text--tight">{basePriceText}</p>
+                  {ratesStatus === 'loading' && <p className="panel-subtext">Loading live currency conversions…</p>}
+                  {ratesStatus === 'ready' && convertedPrices.length > 0 && (
+                    <ul className="panel-conversions" aria-label="Converted prices">
+                      {convertedPrices.map((entry) => (
+                        <li key={entry.code}>{entry.code}: {entry.value}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {ratesStatus === 'error' && (
+                    <p className="panel-subtext">Live conversion is temporarily unavailable.</p>
+                  )}
                 </div>
 
                 {exhibit.tldr && (
@@ -305,12 +420,42 @@ function ExhibitDetail({ id, qrId }) {
                 <p className="panel-info-title">Description</p>
                 <p className="panel-text panel-text--tight">{exhibit.full_text || 'No description available.'}</p>
               </div>
+
+              <div className="panel-description-block">
+                <p className="panel-info-title">Museum references (The Met)</p>
+                {museumStatus === 'loading' && <p className="panel-subtext">Loading related works from museum collection…</p>}
+                {museumStatus === 'error' && <p className="panel-subtext">Museum references are temporarily unavailable.</p>}
+                {museumStatus === 'ready' && museumResults.length === 0 && <p className="panel-subtext">No related records were found for this work.</p>}
+                {museumStatus === 'ready' && museumResults.length > 0 && (
+                  <ul className="museum-results" aria-label="Related museum works">
+                    {museumResults.map((item) => (
+                      <li key={item.object_id || item.url} className="museum-results__item">
+                        {item.url ? (
+                          <a className="museum-results__link" href={item.url} target="_blank" rel="noreferrer">
+                            {item.title || 'Untitled'}
+                          </a>
+                        ) : (
+                          <span className="museum-results__title">{item.title || 'Untitled'}</span>
+                        )}
+                        <p className="museum-results__meta">
+                          {[item.artist, item.date, item.museum].filter(Boolean).join(' · ')}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </>
         )}
 
         {tab === 'watch' && (
-          <div className="panel-card">
+          <div
+            id="tabpanel-watch"
+            role="tabpanel"
+            aria-labelledby="tab-watch"
+            className="panel-card"
+          >
             <p className="panel-label">Film</p>
             {exhibit.video_url ? (
               <a className="watch-link" href={exhibit.video_url} target="_blank" rel="noreferrer">
