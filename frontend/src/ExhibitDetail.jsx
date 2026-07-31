@@ -57,8 +57,8 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-function getDefaultTab({ qrId, user }) {
-  return qrId && !user ? 'read' : 'listen'
+function getDefaultTab() {
+  return 'read'
 }
 
 function ExhibitDetail({ id, qrId }) {
@@ -66,7 +66,7 @@ function ExhibitDetail({ id, qrId }) {
   const [exhibit, setExhibit] = useState(null)
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [error, setError] = useState('')
-  const [tab, setTab] = useState(() => getDefaultTab({ qrId, user })) // 'listen' | 'read' | 'watch'
+  const [tab, setTab] = useState(() => getDefaultTab()) // 'listen' | 'read' | 'watch'
   const [playing, setPlaying] = useState(false)
   const [current, setCurrent] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -79,7 +79,7 @@ function ExhibitDetail({ id, qrId }) {
 
   useEffect(() => {
     // Reset initial tab when navigating between exhibits/QR routes.
-    setTab(getDefaultTab({ qrId, user }))
+    setTab(getDefaultTab())
   }, [id, qrId])
 
   useEffect(() => {
