@@ -43,6 +43,12 @@ function ExhibitList() {
       <header className="list-header">
         <h1 className="list-title">ExhibitGuide</h1>
         <p className="list-sub">{exhibits.length} works · served live from the Django REST API</p>
+        <a href="/start.html" className="list-startbanner">
+          <span className="list-startbanner__label">Start here</span>
+          <span className="list-startbanner__text">
+            Scan a QR code to enter the gallery — the way a visitor arrives
+          </span>
+        </a>
         <div className="list-links">
           <Link to="/scan" className="list-scan-link">Enter the gallery — scan experience →</Link>
           {user ? (

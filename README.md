@@ -12,6 +12,15 @@ It provides:
 This README is written as a technical assessment and handover guide. It maps implementation evidence to the published requirements and rubric language.
 
 ## Assessor Quick Start (Recommended Test Order)
+
+> ### ▶ Start here
+> **`https://exhibitguide-react-frontend.onrender.com/start.html`**
+>
+> This page shows a scannable QR code for every artwork, with instructions. Point a phone
+> camera at any code to enter the application exactly as a gallery visitor would — no app
+> and no account required. Without a phone, selecting a code opens the same page in the
+> browser.
+
 This section is designed for first-time assessors.
 
 If the hosted app is unavailable, run locally using the Local Setup section and then follow the same steps below.
@@ -19,8 +28,8 @@ If the hosted app is unavailable, run locally using the Local Setup section and 
 ### Persona 1: Visitor Flow (Public -> Enquiry -> Dashboard)
 Goal: verify the end-to-end visitor journey from scan to enquiry and saved exhibit management.
 
-1. Open `<frontend>/exhibit-qr-codes.html`, generate the codes, and follow one link
-   (or scan a code with a phone). See **QR Code Entry Flow** below.
+1. Open `<frontend>/start.html` and scan any code with a phone camera (or select one to
+   open it in the browser). See **QR Code Entry Flow** below.
 2. Confirm the QR route opens that work's public exhibit page at `/qr/<qr_identifier>`
    — no sign-in required.
 3. On the exhibit page, select **Express Interest in Purchasing** and submit an email
@@ -141,6 +150,13 @@ Anonymous visitors can read the full exhibit page, play the audio guide, and sub
 **Express Interest in Purchasing**, which records a `Prospect` lead (with dwell time)
 without an account. Member-only actions such as **Save to watchlist** appear only when
 signed in.
+
+### Two QR pages, for two audiences
+
+| Page | For | Purpose |
+|------|-----|---------|
+| `<frontend>/start.html` | **Visitors and assessors** | The entry point. Shows every code with instructions; codes are generated automatically on load, and each is selectable for browser-only testing. |
+| `<frontend>/exhibit-qr-codes.html` | Gallery staff | Print-oriented generator with configurable site and API addresses, for producing wall labels. |
 
 ### Generating and printing codes
 

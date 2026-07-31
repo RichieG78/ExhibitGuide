@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Start Here — ExhibitGuide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #faf9f6;
+      --surface: #ffffff;
+      --surface-warm: #f2ede4;
+      --ink: #1c1917;
+      --ink-soft: #57534d;
+      --muted: #79716b;
+      --faint: #a6a09b;
+      --border: #e7e5e4;
+      --accent: #c4935a;
+      --dark: #1c1816;
+      --serif: 'DM Serif Display', Georgia, serif;
+      --sans: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap { max-width: 940px; margin: 0 auto; padding: 40px 20px 80px; }
+
+    header.masthead { text-align: center; margin-bottom: 34px; }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(32px, 6vw, 46px);
+      line-height: 1.1;
+      margin: 0 0 12px;
+      font-weight: 400;
+    }
+
+    .standfirst {
+      margin: 0 auto;
+      max-width: 56ch;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    /* How-to */
+    .howto {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 26px;
+      margin-bottom: 20px;
+    }
+
+    .howto h2 {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 400;
+      margin: 0 0 18px;
+    }
+
+    ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+
+    ol.steps li {
+      counter-increment: s;
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 11px 0;
+      border-top: 1px solid var(--border);
+    }
+    ol.steps li:first-child { border-top: 0; padding-top: 0; }
+
+    ol.steps li::before {
+      content: counter(s);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      width: 26px; height: 26px;
+      display: grid; place-items: center;
+    }
+
+    ol.steps strong { display: block; font-size: 15px; }
+    ol.steps span { color: var(--muted); font-size: 14px; }
+
+    .aside {
+      background: var(--surface-warm);
+      border-radius: 12px;
+      padding: 15px 18px;
+      margin-bottom: 34px;
+      font-size: 14px;
+      color: var(--ink-soft);
+    }
+    .aside strong { color: var(--ink); }
+
+    /* Codes */
+    h2.section {
+      font-family: var(--serif);
+      font-size: 24px;
+      font-weight: 400;
+      margin: 0 0 6px;
+      text-align: center;
+    }
+    .section-note {
+      margin: 0 0 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    #status { text-align: center; padding: 40px 0; color: var(--muted); }
+    #status.error { color: #b00020; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 16px 16px;
+      text-align: center;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: box-shadow .16s ease, transform .16s ease;
+    }
+    .card:hover { box-shadow: 0 8px 22px rgba(0,0,0,.09); transform: translateY(-2px); }
+    .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+    .card .qr {
+      background: #fff;
+      padding: 8px;
+      border-radius: 8px;
+      line-height: 0;
+      margin-bottom: 13px;
+    }
+
+    .card .title {
+      font-family: var(--serif);
+      font-size: 17px;
+      line-height: 1.22;
+      margin-bottom: 3px;
+    }
+    .card .artist {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card .open {
+      margin-top: 11px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 13.5px;
+      color: var(--faint);
+    }
+    footer a { color: var(--muted); }
+
+    @media print {
+      .howto, .aside, footer, .standfirst, .eyebrow { display: none; }
+      body { background: #fff; }
+      .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .card { border: 1px solid #ddd; page-break-inside: avoid; }
+      .card .open { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <header class="masthead">
+      <p class="eyebrow">Start Here</p>
+      <h1>Scan a code to enter the gallery</h1>
+      <p class="standfirst">
+        ExhibitGuide is designed for a visitor standing in front of an artwork. Each code
+        below sits beside a work on the gallery wall — scanning it opens that piece's page
+        instantly. No app to install, no account needed.
+      </p>
+    </header>
+
+    <section class="howto">
+      <h2>How to try it</h2>
+      <ol class="steps">
+        <li>
+          <div>
+            <strong>Open your phone's camera</strong>
+            <span>Any modern iPhone or Android camera reads QR codes — no separate app.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Point it at any code below</strong>
+            <span>Hold steady until a notification appears, then tap it.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>The artwork's page opens</strong>
+            <span>Read about the piece, play the audio guide, and browse the details — all without signing in.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Express interest in a work</strong>
+            <span>Tap <em>Express Interest in Purchasing</em> and leave an email. This is the gallery's lead capture — it records the enquiry, the artwork, and how long you spent with it.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Create an account to keep a collection</strong>
+            <span>Registering saves the works you scan, so you can revisit them and enquire from your dashboard.</span>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <p class="aside">
+      <strong>No phone to hand?</strong> Select any code below and it will open in this
+      browser — exactly what a scan does. The pages are built mobile-first, so narrowing
+      your window (or using your browser's device view) best reflects the real experience.
+    </p>
+
+    <h2 class="section">The works on show</h2>
+    <p class="section-note">Ten pieces across four exhibitions.</p>
+
+    <div id="status">Loading the collection…</div>
+    <div class="grid" id="grid"></div>
+
+    <footer>
+      <p>
+        ExhibitGuide · <a href="/">Browse all exhibits</a> ·
+        <a href="/exhibit-qr-codes.html">Printable code sheet for gallery staff</a>
+      </p>
+      <p>Codes point to this site. Hosted on a free tier, so the first load after a quiet period may take a moment.</p>
+    </footer>
+
+  </div>
+
+  <script>
+    // The scan destination is this site; exhibit data comes from the API.
+    var SITE = window.location.origin;
+    var API = 'https://exhibitguide-1.onrender.com';
+
+    var grid = document.getElementById('grid');
+    // Note: not named `status` — `window.status` is a legacy string property,
+    // so a global of that name would coerce the element to a string.
+    var statusEl = document.getElementById('status');
+
+    function card(exhibit) {
+      var url = SITE + '/qr/' + exhibit.qr_identifier;
+
+      var a = document.createElement('a');
+      a.className = 'card';
+      a.href = url;
+      a.setAttribute('aria-label', 'Open ' + (exhibit.title || 'exhibit'));
+
+      var holder = document.createElement('div');
+      holder.className = 'qr';
+      var target = document.createElement('div');
+      holder.appendChild(target);
+
+      var title = document.createElement('div');
+      title.className = 'title';
+      title.textContent = exhibit.title || ('Exhibit ' + exhibit.id);
+
+      var artist = document.createElement('div');
+      artist.className = 'artist';
+      artist.textContent = exhibit.artist || '';
+
+      var open = document.createElement('div');
+      open.className = 'open';
+      open.textContent = 'Scan or select →';
+
+      a.appendChild(holder);
+      a.appendChild(title);
+      a.appendChild(artist);
+      a.appendChild(open);
+      grid.appendChild(a);
+
+      new QRCode(target, {
+        text: url,
+        width: 150,
+        height: 150,
+        colorDark: '#1c1816',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    fetch(API + '/api/exhibits/')
+      .then(function (r) {
+        if (!r.ok) throw new Error('The gallery service returned ' + r.status);
+        return r.json();
+      })
+      .then(function (exhibits) {
+        var withCodes = exhibits.filter(function (e) { return e.qr_identifier; });
+        withCodes.sort(function (a, b) { return a.qr_identifier - b.qr_identifier; });
+        if (!withCodes.length) throw new Error('No exhibits were returned.');
+        withCodes.forEach(card);
+        statusEl.style.display = 'none';
+      })
+      .catch(function (err) {
+        statusEl.className = 'error';
+        statusEl.textContent =
+          'Could not load the collection: ' + err.message +
+          ' The service may be waking from sleep — please refresh in a moment.';
+      });
+  </script>
+</body>
+</html>

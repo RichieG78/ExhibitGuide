@@ -49,6 +49,37 @@
   color: var(--muted);
   font-size: 0.95rem;
 }
+/* Prominent entry point to the QR start page (the intended first stop). */
+.list-startbanner {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  padding: 0.85rem 1.1rem;
+  background: var(--surface-warm);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s ease;
+}
+.list-startbanner:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+.list-startbanner__label {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.list-startbanner__text {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
 .list-links {
   margin-top: 0.75rem;
   display: flex;
