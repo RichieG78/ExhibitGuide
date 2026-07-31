@@ -5,6 +5,8 @@ Mirrors the collector flow already implemented for the session-based site in
 GalleryInquiry), exposed as JWT-authenticated JSON endpoints.
 """
 
+import logging
+
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -29,6 +31,9 @@ from .serializers import (
     SavedExhibitSerializer,
     UserSerializer,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def _tokens_for_user(user):
@@ -101,16 +106,26 @@ class PasswordResetRequestView(APIView):
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
             reset_url = f'{frontend_url}/reset-password?uid={uid}&token={token}'
-            send_mail(
-                subject='Reset your ExhibitGuide password',
-                message=(
-                    'You requested a password reset for your ExhibitGuide account.\n\n'
-                    f'Reset link: {reset_url}\n\n'
-                    'If you did not request this, you can ignore this message.'
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-            )
+            try:
+                send_mail(
+                    subject='Reset your ExhibitGuide password',
+                    message=(
+                        'You requested a password reset for your ExhibitGuide account.\n\n'
+                        f'Reset link: {reset_url}\n\n'
+                        'If you did not request this, you can ignore this message.'
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                )
+            except Exception:
+                # A mail transport failure must not change the response. Letting it
+                # propagate would return 500 for registered addresses while unknown
+                # ones still returned 200 — which would reveal exactly which emails
+                # have accounts, defeating the protection below. Log for operators
+                # and carry on.
+                logger.exception(
+                    'Password reset email could not be sent for user id %s', user.pk
+                )
 
         # Prevent user-enumeration by returning the same response either way.
         return Response(

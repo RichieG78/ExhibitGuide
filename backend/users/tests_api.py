@@ -114,6 +114,68 @@ class UserApiPasswordResetTests(TestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('NewStrongPass123!'))
 
+    def test_password_reset_request_is_identical_for_unknown_email(self):
+        response = self.client.post(
+            '/api/auth/password-reset/',
+            {'email': 'nobody-here@example.com'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(mail.outbox), 0)
+
+
+class PasswordResetMailFailureTests(TestCase):
+    """A broken mail transport must not reveal which addresses have accounts.
+
+    Regression guard: `send_mail` was previously unguarded, so a registered
+    address returned 500 while an unknown one returned 200. That difference let
+    an attacker enumerate valid accounts, defeating the endpoint's deliberate
+    "same response either way" design.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='reset-user',
+            email='reset@example.com',
+            password='OldPass123!',
+        )
+        self.client = APIClient()
+
+    # Point SMTP at a closed port so sending genuinely fails.
+    broken_mail = override_settings(
+        EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend',
+        EMAIL_HOST='127.0.0.1',
+        EMAIL_PORT=1,
+        EMAIL_TIMEOUT=1,
+    )
+
+    def test_known_email_still_returns_200_when_mail_fails(self):
+        with self.broken_mail:
+            response = self.client.post(
+                '/api/auth/password-reset/',
+                {'email': 'reset@example.com'},
+                format='json',
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_known_and_unknown_emails_are_indistinguishable_when_mail_fails(self):
+        with self.broken_mail:
+            known = self.client.post(
+                '/api/auth/password-reset/',
+                {'email': 'reset@example.com'},
+                format='json',
+            )
+            unknown = self.client.post(
+                '/api/auth/password-reset/',
+                {'email': 'nobody-here@example.com'},
+                format='json',
+            )
+
+        self.assertEqual(known.status_code, unknown.status_code)
+        self.assertEqual(known.data, unknown.data)
+
 
 class UserApiInquiryTests(TestCase):
     def setUp(self):
