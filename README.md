@@ -23,6 +23,45 @@ Notes:
 - The backend URL does not provide end-user pages; it serves API routes and admin only.
 - On Render free tier, first request after idle can take 30-60 seconds.
 
+### Two versions, two branches — and why they are not merged
+
+This repository holds **two complete, independently deployed versions** of ExhibitGuide.
+This branch is Version 2.
+
+| | Version 1 — Original | Version 2 — this branch |
+|---|---|---|
+| Branch | `main` | `react-and-rest-version` |
+| Tag | `v1.0` | `v2.0` |
+| Architecture | Django monolith, server-rendered templates | Django REST API + React SPA |
+| Django folder | `exhibit_guide_pwa/` | `backend/` |
+| Hosted | https://exhibitguide.onrender.com | https://exhibitguide-react-frontend.onrender.com |
+
+**Why two versions exist.** Version 1 delivered the product as a conventional Django
+application and validated the core journey. Version 2 migrated that same product to a
+decoupled architecture. The migration itself is part of what is being submitted, so the
+starting point had to remain intact and inspectable rather than being overwritten — an
+assessor can compare the two directly, and the ten-phase route between them is recorded in
+`DJANGO_TO_REACT_MIGRATION_PLAN.md`.
+
+**Why they are deliberately not merged.** These are parallel deliverables, not a feature
+branch awaiting integration:
+
+1. **A merge would break the live Version 1 site.** `main` auto-deploys to Render. Version 2
+   deleted the templates, template views, forms and `crispy_forms` dependency that Version 1
+   serves, and renamed `exhibit_guide_pwa/` to `backend/`. Merging would delete the running
+   application's code.
+2. **The two are assessed independently.** Both are documented as separately gradable.
+   Collapsing them into one branch would destroy that structure and leave only the later
+   architecture as evidence.
+3. **Neither supersedes the other.** A merge asserts that one version replaces another.
+   Here both are finished products that happen to share an origin, and branches are the
+   correct tool for maintaining parallel lines of work.
+4. **The submitted state is pinned.** `v1.0` and `v2.0` tag each branch, so the assessed
+   version of each remains retrievable regardless of later development.
+
+The decision is also recorded in `DJANGO_TO_REACT_MIGRATION_PLAN.md` alongside the work it
+concerns.
+
 ## 2) Fast Production Verification Flow
 
 ### Visitor flow (public to authenticated)
