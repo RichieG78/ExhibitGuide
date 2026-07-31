@@ -20,8 +20,8 @@ This repository contains **two separate versions** of ExhibitGuide, maintained o
 | **Architecture** | Django monorepo, server-rendered templates | Decoupled: Django REST API + React frontend |
 | **Django folder** | `exhibit_guide_pwa/` | `backend/` |
 | **Frontend** | Django templates + Bootstrap (`crispy_forms`) | Separate `frontend/` React app (Vite) |
-| **Hosted URL** | `https://exhibitguide.onrender.com` | *(separate Render instance — link to be added)* |
-| **Status** | Complete — assess using this README | In active development |
+| **Hosted URL** | `https://exhibitguide.onrender.com` | `https://exhibitguide-react-frontend.onrender.com` |
+| **Status** | Complete — assess using this README | Complete and deployed |
 
 ### Assessing Version 1 (Original Django app) — branch `main`
 This is the version documented in full by the rest of this README. To run it locally:
@@ -37,7 +37,21 @@ python manage.py runserver               # app at http://localhost:8000
 See **Local Setup** below for environment variables (for example `DJANGO_DEBUG=True` and `DJANGO_SECRET_KEY`). Then follow the **Assessor Quick Start** personas below, or use the hosted URL above.
 
 ### Assessing Version 2 (React + Django REST) — branch `react-and-rest-version`
-> **In active development.** The Django REST API lives in `backend/` and the React frontend in `frontend/`. When complete, it runs as two processes:
+
+**Deployed and ready to assess.** It runs as two hosted services:
+
+| Service | URL |
+|---|---|
+| **Frontend (start here)** | `https://exhibitguide-react-frontend.onrender.com` |
+| Backend REST API + Django admin | `https://exhibitguide-1.onrender.com` |
+
+Open the **frontend** URL to use the application. The backend URL serves the API and the
+admin only — it has no pages of its own, so its root returns "Not Found" by design.
+
+Full assessor documentation for this version lives in the README on the
+`react-and-rest-version` branch.
+
+To run it locally instead, it needs two processes:
 
 ```bash
 git checkout react-and-rest-version
@@ -54,7 +68,9 @@ npm install
 npm run dev                              # UI at http://localhost:5173
 ```
 
-A dedicated hosted URL (separate Render instance) will be added here once deployed. **Until this section is marked complete, please grade Version 1.**
+Both versions are complete and independently deployed, so either can be assessed on its own.
+Note that the free hosting tier sleeps when idle — the first request after a quiet period
+may take 30–60 seconds to wake.
 
 ## Assessor Quick Start (Recommended Test Order)
 This section is designed for first-time assessors.
