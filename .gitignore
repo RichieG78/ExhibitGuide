@@ -38,3 +38,6 @@ tempCodeRunnerFile.py
 
 # Media
 staticfiles/
+# Local backups and editor config
+BackUp/
+.vscode/
