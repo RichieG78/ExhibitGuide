@@ -9,6 +9,17 @@ const PENDING_INTEREST_KEY = 'eg_interest_exhibit_id'
 const CONTACT_PREF_PROMPT_KEY = 'eg_contact_pref_prompt'
 const FILTERS = ['Your scans', 'Shows', 'Enquired', 'Acquired']
 
+function isContactPreferenceComplete(profile) {
+  const method = (profile?.preferred_contact_method || '').trim()
+  const email = (profile?.email || '').trim()
+  const phone = (profile?.phone || '').trim()
+
+  if (!method) return false
+  if (method === 'email') return Boolean(email)
+  if (method === 'phone' || method === 'text') return Boolean(phone)
+  return false
+}
+
 const IconBack = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
 )
@@ -34,7 +45,8 @@ function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false)
   const [activeInquiryItem, setActiveInquiryItem] = useState(null)
   const [submittingInquiry, setSubmittingInquiry] = useState(false)
-  const [profileData, setProfileData] = useState({ email: '', phone: '' })
+  const [profileData, setProfileData] = useState({ email: '', phone: '', preferred_contact_method: '' })
+  const [profileLoaded, setProfileLoaded] = useState(false)
   const [autoSavingInterest, setAutoSavingInterest] = useState(false)
   const [prefModalOpen, setPrefModalOpen] = useState(false)
   const [prefMethod, setPrefMethod] = useState('email')
@@ -77,7 +89,11 @@ function Dashboard() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) return
-        setProfileData({ email: data.email || '', phone: data.phone || '' })
+        setProfileData({
+          email: data.email || '',
+          phone: data.phone || '',
+          preferred_contact_method: data.preferred_contact_method || '',
+        })
         setContactEmail(data.email || '')
         setPrefEmail(data.email || '')
         setPrefPhone(data.phone || '')
@@ -85,19 +101,22 @@ function Dashboard() {
       .catch(() => {
         // Non-blocking for dashboard render.
       })
+      .finally(() => setProfileLoaded(true))
   }, [authFetch])
 
   useEffect(() => {
+    if (!profileLoaded) return
     const shouldPrompt = localStorage.getItem(CONTACT_PREF_PROMPT_KEY) === '1'
-    if (!shouldPrompt || prefModalOpen || modalOpen || prefPromptShownThisVisit) return
+    const hasCompletedPreference = isContactPreferenceComplete(profileData)
+    if (!shouldPrompt || hasCompletedPreference || prefModalOpen || modalOpen || prefPromptShownThisVisit) return
 
-    setPrefMethod(profileData.phone ? 'phone' : 'email')
+    setPrefMethod(profileData.preferred_contact_method || (profileData.phone ? 'phone' : 'email'))
     setPrefEmail(profileData.email || user?.email || '')
     setPrefPhone(profileData.phone || '')
     setPrefError('')
     setPrefModalOpen(true)
     setPrefPromptShownThisVisit(true)
-  }, [prefModalOpen, modalOpen, profileData, user, prefPromptShownThisVisit])
+  }, [prefModalOpen, modalOpen, profileData, user, prefPromptShownThisVisit, profileLoaded])
 
   useEffect(() => {
     if (!interestExhibitId || autoSavedRef.current || status !== 'ready') return
@@ -157,7 +176,7 @@ function Dashboard() {
   const openEnquiryModal = (item) => {
     if (prefModalOpen) return
     setActiveInquiryItem(item)
-    setContactMethod('email')
+    setContactMethod(profileData.preferred_contact_method || 'email')
     setContactEmail(profileData.email || user?.email || '')
     setContactPhone(profileData.phone || '')
     setNote('')
@@ -198,6 +217,7 @@ function Dashboard() {
       const payload = {}
       if (email) payload.email = email
       if (phone) payload.phone = phone
+      payload.preferred_contact_method = prefMethod
       const res = await authFetch('/api/auth/profile/', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -211,9 +231,11 @@ function Dashboard() {
       setProfileData({
         email: data.email || email,
         phone: data.phone || phone,
+        preferred_contact_method: data.preferred_contact_method || prefMethod,
       })
       setContactEmail(data.email || email)
       setContactPhone(data.phone || phone)
+      setContactMethod(data.preferred_contact_method || prefMethod)
       setNotice('Contact preference saved to your profile. You can change it any time from Profile.')
       localStorage.removeItem(CONTACT_PREF_PROMPT_KEY)
       closePreferenceModal()
@@ -271,8 +293,10 @@ function Dashboard() {
         setNotice('You have already made an enquiry for this exhibit.')
       } else {
         setNotice('Your enquiry has been sent to the gallery owner.')
-        localStorage.setItem(CONTACT_PREF_PROMPT_KEY, '1')
-        setPrefPromptShownThisVisit(false)
+        if (!isContactPreferenceComplete(profileData)) {
+          localStorage.setItem(CONTACT_PREF_PROMPT_KEY, '1')
+          setPrefPromptShownThisVisit(false)
+        }
       }
       closeEnquiryModal()
       load()

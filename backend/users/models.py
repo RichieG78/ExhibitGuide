@@ -41,11 +41,21 @@ class Prospect(models.Model):
 class UserProfile(models.Model):
     """Stores extra profile details that Django's default User does not include."""
 
+    class PreferredContactMethod(models.TextChoices):
+        EMAIL = 'email', 'Email'
+        PHONE = 'phone', 'Phone'
+        TEXT = 'text', 'Text'
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     image = models.ImageField(upload_to='profile_pics', blank=True)
     firstname = models.CharField(max_length=150, blank=True)
     lastname = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=30, blank=True)
+    preferred_contact_method = models.CharField(
+        max_length=10,
+        choices=PreferredContactMethod.choices,
+        blank=True,
+    )
     bio = models.TextField(blank=True)
 
     class Meta:

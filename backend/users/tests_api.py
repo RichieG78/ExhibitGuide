@@ -34,6 +34,7 @@ class UserApiProfileTests(TestCase):
                 'first_name': 'Ada',
                 'last_name': 'Lovelace',
                 'phone': '+3538888888',
+                'preferred_contact_method': 'phone',
                 'bio': 'Collector of modern art',
             },
             format='json',
@@ -46,6 +47,20 @@ class UserApiProfileTests(TestCase):
         self.assertEqual(self.user.first_name, 'Ada')
         self.assertEqual(self.user.last_name, 'Lovelace')
         self.assertEqual(self.user.profile.phone, '+3538888888')
+        self.assertEqual(self.user.profile.preferred_contact_method, 'phone')
+
+    def test_profile_patch_requires_phone_for_phone_or_text_preference(self):
+        response = self.client.patch(
+            '/api/auth/profile/',
+            {
+                'preferred_contact_method': 'text',
+                'phone': '',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('phone', response.data)
 
 
 @override_settings(

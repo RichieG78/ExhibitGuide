@@ -8,7 +8,7 @@ from rest_framework import serializers
 
 from exhibits.serializers import ExhibitSerializer
 
-from .models import GalleryInquiry, SavedExhibit
+from .models import GalleryInquiry, SavedExhibit, UserProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -84,6 +84,11 @@ class ProfileSerializer(serializers.Serializer):
     first_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
     last_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
     phone = serializers.CharField(required=False, allow_blank=True, max_length=30)
+    preferred_contact_method = serializers.ChoiceField(
+        required=False,
+        allow_blank=True,
+        choices=UserProfile.PreferredContactMethod.choices,
+    )
     bio = serializers.CharField(required=False, allow_blank=True)
 
     def to_representation(self, profile):
@@ -94,9 +99,20 @@ class ProfileSerializer(serializers.Serializer):
             'first_name': profile.firstname or user.first_name,
             'last_name': profile.lastname or user.last_name,
             'phone': profile.phone,
+            'preferred_contact_method': profile.preferred_contact_method,
             'bio': profile.bio,
             'image_url': profile.image.url if profile.image else None,
         }
+
+    def validate(self, attrs):
+        method = attrs.get('preferred_contact_method')
+        if method in {'phone', 'text'}:
+            phone = attrs.get('phone')
+            current_phone = self.instance.phone if self.instance else ''
+            candidate_phone = (phone if phone is not None else current_phone).strip()
+            if not candidate_phone:
+                raise serializers.ValidationError({'phone': 'Phone is required when preferred contact method is phone or text.'})
+        return attrs
 
     def validate_username(self, value):
         user = self.context.get('user')
@@ -125,11 +141,13 @@ class ProfileSerializer(serializers.Serializer):
             profile.lastname = last_name
         if 'phone' in validated_data:
             profile.phone = validated_data['phone']
+        if 'preferred_contact_method' in validated_data:
+            profile.preferred_contact_method = validated_data['preferred_contact_method']
         if 'bio' in validated_data:
             profile.bio = validated_data['bio']
 
         user.save(update_fields=['username', 'email', 'first_name', 'last_name'])
-        profile.save(update_fields=['firstname', 'lastname', 'phone', 'bio'])
+        profile.save(update_fields=['firstname', 'lastname', 'phone', 'preferred_contact_method', 'bio'])
         return profile
 
 

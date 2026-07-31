@@ -6,7 +6,7 @@ That keeps artists, artworks, shows, and public exhibit records easier to reuse.
 
 from django.contrib.auth.models import User
 from django.db import models
-from PIL import Image
+from PIL import Image, ImageOps
 
 
 class Artist(models.Model):
@@ -123,10 +123,10 @@ class Exhibit(models.Model):
     def show_name(self):
         return self.show.show_name if self.show else ''
 
-    # Uploaded exhibit images are shown as a full-width hero on the detail page,
-    # so they are capped at this size rather than the smaller profile-picture
-    # limit. Large originals (multi-megabyte scans) otherwise render slowly.
-    MAX_IMAGE_SIZE = (1600, 1600)
+    # Uploaded exhibit images are shown as a full-width hero on mobile. A max
+    # edge around 1440px stays visually crisp on high-density phone screens
+    # while keeping transfer size much lower than camera originals.
+    MAX_IMAGE_SIZE = (1440, 1440)
 
     def save(self, *args, **kwargs):
         """Save the exhibit, downscale large uploads, and generate a stable QR number."""
@@ -143,7 +143,7 @@ class Exhibit(models.Model):
             self.qr_identifier = generated_qr_identifier
 
     def _downscale_image(self):
-        """Shrink an uploaded exhibit image in place when it exceeds MAX_IMAGE_SIZE."""
+        """Downscale/compress uploaded exhibit images for fast mobile loading."""
         if not self.image:
             return
 
@@ -153,10 +153,35 @@ class Exhibit(models.Model):
             # Remote/missing storage or an unreadable file: leave it untouched.
             return
 
+        image_file = ImageOps.exif_transpose(image_file)
+        original_format = (image_file.format or '').upper()
+        original_size_bytes = self.image.size if hasattr(self.image, 'size') else 0
+
         max_width, max_height = self.MAX_IMAGE_SIZE
+        resized = False
         if image_file.width > max_width or image_file.height > max_height:
-            image_file.thumbnail(self.MAX_IMAGE_SIZE)
-            image_file.save(self.image.path, optimize=True, quality=85)
+            image_file.thumbnail(self.MAX_IMAGE_SIZE, Image.Resampling.LANCZOS)
+            resized = True
+
+        # Re-encode large uploads even when dimensions already fit; many direct
+        # camera exports are still unnecessarily heavy for mobile delivery.
+        should_reencode = resized or original_size_bytes > 1_200_000
+
+        if not should_reencode:
+            return
+
+        save_kwargs = {'optimize': True}
+
+        if original_format in {'JPEG', 'JPG'}:
+            if image_file.mode not in {'RGB', 'L'}:
+                image_file = image_file.convert('RGB')
+            save_kwargs.update({'quality': 82, 'progressive': True})
+        elif original_format == 'WEBP':
+            save_kwargs.update({'quality': 82, 'method': 6})
+        elif original_format == 'PNG':
+            save_kwargs.update({'compress_level': 6})
+
+        image_file.save(self.image.path, **save_kwargs)
 
     def __str__(self):
         if self.artwork:

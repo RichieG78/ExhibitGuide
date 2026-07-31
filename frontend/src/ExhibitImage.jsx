@@ -1,10 +1,13 @@
 import { useState } from 'react'
 
-// Renders an exhibit's image, trying the external image_url first, then the
-// local uploaded image, and finally a graceful placeholder if both fail — so a
-// broken or blocked URL never shows the browser's default broken-image icon.
+// Renders an exhibit's image with upload-first precedence (when a non-default
+// upload exists), then falls back to image_url, and finally to a placeholder.
+// This keeps gallery-owner uploads authoritative while preserving URL fallback.
 function ExhibitImage({ exhibit, className }) {
-  const sources = [exhibit.image_url, exhibit.image].filter(Boolean)
+  const hasUploadedImage = Boolean(exhibit.image) && !String(exhibit.image).includes('/default.jpg')
+  const sources = hasUploadedImage
+    ? [exhibit.image, exhibit.image_url].filter(Boolean)
+    : [exhibit.image_url, exhibit.image].filter(Boolean)
   const [index, setIndex] = useState(0)
 
   // Ran out of sources to try (or there were none): show a placeholder.

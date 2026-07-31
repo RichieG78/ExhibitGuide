@@ -254,10 +254,7 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.musee-orsay.fr/en/artworks/arrangement-in-grey-and-black-no-1",
         "video_url": "https://www.youtube.com/watch?v=Yq6C6cZGPBE",
-        "image_url": (
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/"
-            "Whistlers_Mother_high_res.jpg/1024px-Whistlers_Mother_high_res.jpg"
-        ),
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Whistlers_Mother_high_res.jpg",
         "qr_identifier": 1006,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 4, 15, 10, 0, 0)),
     },
@@ -415,13 +412,9 @@ SEED_EXHIBITS = [
         ),
         "audio_url": "https://www.moma.org/collection/works/79878",
         "video_url": "https://www.youtube.com/watch?v=ItOGcuFJqvc",
-        # Rothko's work is still in copyright, so there is no freely-licensed
-        # Wikimedia image of this specific painting (the file used previously
-        # showed a different work, No. 24). The correct image ships with the
-        # repo instead: `image` below points at it, and image_url is left empty
-        # so the API serves the bundled file as an absolute URL.
-        "image_url": "",
-        "image": "exhibit_images/No_61_Mark_Rothko.jpg",
+        # A direct image file URL is used here because deployed environments
+        # may not expose repo-bundled media files under /exhibit_images/.
+        "image_url": "https://upload.wikimedia.org/wikipedia/en/5/5f/No_61_Mark_Rothko.jpg",
         "qr_identifier": 1010,
         "publish_date": timezone.make_aware(datetime.datetime(2025, 6, 1, 10, 0, 0)),
     },

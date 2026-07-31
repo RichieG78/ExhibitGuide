@@ -17,6 +17,13 @@ def sync_exhibit_image_url(sender, instance, **kwargs):
         return
 
     current_image_url = instance.image.url
+
+    # Respect curated external URLs (for example Wikimedia links in seed data).
+    # Only mirror the uploaded file path when image_url is blank or already
+    # pointing at the same local file.
+    if instance.image_url and instance.image_url != current_image_url:
+        return
+
     if instance.image_url == current_image_url:
         return
 
