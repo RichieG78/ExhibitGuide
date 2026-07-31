@@ -51,12 +51,16 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
+function getDefaultTab({ qrId, user }) {
+  return qrId && !user ? 'read' : 'listen'
+}
+
 function ExhibitDetail({ id, qrId }) {
   const { user, authFetch } = useAuth()
   const [exhibit, setExhibit] = useState(null)
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [error, setError] = useState('')
-  const [tab, setTab] = useState('listen') // 'listen' | 'read' | 'watch'
+  const [tab, setTab] = useState(() => getDefaultTab({ qrId, user })) // 'listen' | 'read' | 'watch'
   const [playing, setPlaying] = useState(false)
   const [current, setCurrent] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -66,6 +70,17 @@ function ExhibitDetail({ id, qrId }) {
   const [saved, setSaved] = useState(false)
   const [dwellStart] = useState(() => Date.now()) // for the dwell_time metric
   const audioRef = useRef(null)
+  const interestBannerRef = useRef(null)
+
+  useEffect(() => {
+    // Reset initial tab when navigating between exhibits/QR routes.
+    setTab(getDefaultTab({ qrId, user }))
+  }, [id, qrId])
+
+  useEffect(() => {
+    if (!user || !interestNotice || !interestBannerRef.current) return
+    interestBannerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [interestNotice, user])
 
   useEffect(() => {
     setStatus('loading')
@@ -171,7 +186,7 @@ function ExhibitDetail({ id, qrId }) {
       </header>
 
       {interestNotice && (
-        <div className="detail-banner" role="status">
+        <div ref={interestBannerRef} className="detail-banner" role="status">
           <IconCheck />
           {interestNotice}
         </div>

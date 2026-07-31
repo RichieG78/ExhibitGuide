@@ -7,7 +7,7 @@ import './Dashboard.css'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const PENDING_INTEREST_KEY = 'eg_interest_exhibit_id'
 const CONTACT_PREF_PROMPT_KEY = 'eg_contact_pref_prompt'
-const FILTERS = ['All', 'Watching', 'Enquired', 'Acquired']
+const FILTERS = ['Your scans', 'Shows', 'Enquired', 'Acquired']
 
 const IconBack = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
@@ -24,7 +24,8 @@ function Dashboard() {
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [filter, setFilter] = useState('All')
+  const [filter, setFilter] = useState('Your scans')
+  const [showFilter, setShowFilter] = useState('All shows')
   const [contactMethod, setContactMethod] = useState('email')
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
@@ -126,7 +127,7 @@ function Dashboard() {
       .then((res) => {
         if (!res.ok) throw new Error('Could not add artwork to watchlist')
         localStorage.removeItem(PENDING_INTEREST_KEY)
-        setNotice('The scanned artwork has been added to your watchlist.')
+        setNotice('The scanned artwork has been added to your scans.')
         return load()
       })
       .catch(() => {
@@ -135,7 +136,23 @@ function Dashboard() {
       .finally(() => setAutoSavingInterest(false))
   }, [interestExhibitId, status, items, authFetch, load])
 
-  const visible = filter === 'All' ? items : items.filter((it) => it.status === filter.toLowerCase())
+  const showOptions = useMemo(() => {
+    const names = Array.from(new Set(items.map((item) => item.show_name).filter(Boolean)))
+    names.sort((a, b) => a.localeCompare(b))
+    return ['All shows', ...names]
+  }, [items])
+
+  const visible = useMemo(() => {
+    if (filter === 'Enquired' || filter === 'Acquired') {
+      return items.filter((item) => item.status === filter.toLowerCase())
+    }
+
+    if (filter === 'Shows' && showFilter !== 'All shows') {
+      return items.filter((item) => item.show_name === showFilter)
+    }
+
+    return items
+  }, [filter, items, showFilter])
 
   const openEnquiryModal = (item) => {
     if (prefModalOpen) return
@@ -283,7 +300,7 @@ function Dashboard() {
       <section className="dash-greeting">
         <p className="dash-eyebrow">Welcome Back</p>
         <h1 className="dash-name">{displayName}</h1>
-        <p className="dash-subtitle">Pieces you've expressed interest in</p>
+        <p className="dash-subtitle">Your scans, enquiries, and saved pieces</p>
       </section>
 
       {autoSavingInterest && <p className="dash-notice">Adding scanned artwork to your watchlist…</p>}
@@ -295,12 +312,30 @@ function Dashboard() {
             key={f}
             type="button"
             className={`dash-pill ${filter === f ? 'dash-pill--active' : ''}`}
-            onClick={() => setFilter(f)}
+            onClick={() => {
+              setFilter(f)
+              if (f !== 'Shows') setShowFilter('All shows')
+            }}
           >
             {f}
           </button>
         ))}
       </div>
+
+      {filter === 'Shows' && (
+        <div className="dash-filters dash-filters--sub">
+          {showOptions.map((name) => (
+            <button
+              key={name}
+              type="button"
+              className={`dash-pill ${showFilter === name ? 'dash-pill--active' : ''}`}
+              onClick={() => setShowFilter(name)}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="dash-feed">
         {status === 'loading' && <p className="dash-status">Loading your collection…</p>}
@@ -312,7 +347,11 @@ function Dashboard() {
           </p>
         )}
         {status === 'ready' && items.length > 0 && visible.length === 0 && (
-          <p className="dash-status">Nothing {filter.toLowerCase()} yet.</p>
+          <p className="dash-status">
+            {filter === 'Shows' && showFilter !== 'All shows'
+              ? `No scans in ${showFilter} yet.`
+              : `Nothing ${filter.toLowerCase()} yet.`}
+          </p>
         )}
 
         {visible.map((item) => (
