@@ -3,6 +3,26 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import './Auth.css'
 
+async function readJsonSafe(res) {
+  const contentType = res.headers.get('content-type') || ''
+  const bodyText = await res.text()
+
+  if (!bodyText) return {}
+
+  if (contentType.includes('application/json')) {
+    try {
+      return JSON.parse(bodyText)
+    } catch {
+      return {}
+    }
+  }
+
+  // Backend can return HTML for infrastructure/proxy errors; avoid JSON parse crashes.
+  return { detail: `Unexpected response format (HTTP ${res.status}).` }
+}
+
+// Member profile page: loads current account data and lets users update the
+// fields reused in enquiry/contact workflows.
 function ProfilePage() {
   const navigate = useNavigate()
   const { authFetch, logout } = useAuth()
@@ -20,9 +40,10 @@ function ProfilePage() {
   const [success, setSuccess] = useState('')
 
   useEffect(() => {
+    // Initial load of profile values for the form.
     authFetch('/api/auth/profile/')
       .then(async (res) => {
-        const data = await res.json()
+        const data = await readJsonSafe(res)
         if (!res.ok) throw new Error(data.detail || 'Could not load profile.')
         setForm({
           username: data.username || '',
@@ -52,12 +73,13 @@ function ProfilePage() {
     setSuccess('')
 
     try {
+      // Persist the full profile so future enquiry forms can be pre-filled.
       const res = await authFetch('/api/auth/profile/', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      const data = await res.json()
+      const data = await readJsonSafe(res)
       if (!res.ok) {
         const firstError =
           data.username?.[0] ||
@@ -95,7 +117,23 @@ function ProfilePage() {
   return (
     <main className="auth-screen">
       <div className="auth-card">
-        <Link to="/dashboard" className="auth-brand">ExhibitGuide</Link>
+        <div className="auth-topbar">
+          <button
+            type="button"
+            className="auth-linkbtn auth-linkbtn--back"
+            onClick={() => navigate('/dashboard')}
+            aria-label="Back to dashboard"
+          >
+            ← Back
+          </button>
+
+          <Link to="/dashboard" className="auth-brand auth-brand--center">ExhibitGuide</Link>
+          <span className="auth-topbar__spacer" aria-hidden="true" />
+        </div>
+
+        {error && <p className="auth-notice auth-notice--error" role="alert">{error}</p>}
+        {success && <p className="auth-notice auth-notice--success" role="status">{success}</p>}
+
         <h1 className="auth-title">Your profile</h1>
         <p className="auth-sub">Update account details used for collector inquiries.</p>
 
@@ -124,9 +162,6 @@ function ProfilePage() {
             Bio
             <textarea className="auth-textarea" name="bio" value={form.bio} onChange={onChange} rows={4} />
           </label>
-
-          {error && <p className="auth-error">{error}</p>}
-          {success && <p className="auth-success">{success}</p>}
 
           <button className="auth-submit" type="submit" disabled={status !== 'ready'}>
             {status === 'saving' ? 'Saving…' : 'Save profile'}

@@ -41,14 +41,14 @@ function hasProfileName(profile) {
 const IconBack = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
 )
-const IconArrowRight = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+const IconLogout = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
 )
 
 function Dashboard() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { user, authFetch } = useAuth()
+  const { user, authFetch, logout } = useAuth()
   const [items, setItems] = useState([])
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [error, setError] = useState('')
@@ -306,17 +306,13 @@ function Dashboard() {
     const resolvedPhone = cleanPhone || profilePhone
     const resolvedFirstName = cleanFirstName || profileFirstName
     const resolvedLastName = cleanLastName || profileLastName
-    const needsNameCapture = !hasProfileName(profileData)
-
-    if (needsNameCapture) {
-      if (!resolvedFirstName) {
-        setModalError('Please add your first name to continue.')
-        return
-      }
-      if (!resolvedLastName) {
-        setModalError('Please add your last name to continue.')
-        return
-      }
+    if (!resolvedFirstName) {
+      setModalError('Please add your first name to continue.')
+      return
+    }
+    if (!resolvedLastName) {
+      setModalError('Please add your last name to continue.')
+      return
     }
 
     if (contactMethod === 'email' && !resolvedEmail) {
@@ -331,33 +327,44 @@ function Dashboard() {
     setSubmittingInquiry(true)
     setModalError('')
     try {
-      let profileSaveWarning = ''
-
-      if (needsNameCapture) {
-        const profileRes = await authFetch('/api/auth/profile/', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            first_name: resolvedFirstName,
-            last_name: resolvedLastName,
-          }),
-        })
-        const profileUpdate = await profileRes.json().catch(() => ({}))
-        if (!profileRes.ok) {
-          profileSaveWarning = (
-            profileUpdate.detail ||
-            profileUpdate.first_name?.[0] ||
-            profileUpdate.last_name?.[0] ||
-            'Your enquiry will still be sent, but we could not save your name to profile right now.'
-          )
-        } else {
-          setProfileData((prev) => ({
-            ...prev,
-            first_name: profileUpdate.first_name || resolvedFirstName,
-            last_name: profileUpdate.last_name || resolvedLastName,
-          }))
-        }
+      const profilePayload = {
+        first_name: resolvedFirstName,
+        last_name: resolvedLastName,
+        preferred_contact_method: contactMethod,
       }
+      if (resolvedEmail) {
+        profilePayload.email = resolvedEmail
+      }
+      if (resolvedPhone) {
+        profilePayload.phone = resolvedPhone
+      }
+
+      const profileRes = await authFetch('/api/auth/profile/', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profilePayload),
+      })
+      const profileUpdate = await profileRes.json().catch(() => ({}))
+      if (!profileRes.ok) {
+        throw new Error(
+          profileUpdate.detail ||
+          profileUpdate.first_name?.[0] ||
+          profileUpdate.last_name?.[0] ||
+          profileUpdate.email?.[0] ||
+          profileUpdate.phone?.[0] ||
+          profileUpdate.preferred_contact_method?.[0] ||
+          'Could not save your details to profile. Please try again.'
+        )
+      }
+
+      setProfileData((prev) => ({
+        ...prev,
+        email: profileUpdate.email || resolvedEmail,
+        phone: profileUpdate.phone || resolvedPhone,
+        preferred_contact_method: profileUpdate.preferred_contact_method || contactMethod,
+        first_name: profileUpdate.first_name || resolvedFirstName,
+        last_name: profileUpdate.last_name || resolvedLastName,
+      }))
 
       const methodLabel = contactMethod === 'text' ? 'Text message' : contactMethod[0].toUpperCase() + contactMethod.slice(1)
       const messageLines = []
@@ -382,14 +389,11 @@ function Dashboard() {
       }
 
       if (data.upgraded_to_prospect) {
-        const success = 'Purchase enquiry sent. Your interest has been flagged for gallery follow-up.'
-        setNotice(profileSaveWarning ? `${success} ${profileSaveWarning}` : success)
+        setNotice('Purchase enquiry sent. Your interest has been flagged for gallery follow-up.')
       } else if (data.already_expressed) {
-        const success = 'You have already made an enquiry for this exhibit.'
-        setNotice(profileSaveWarning ? `${success} ${profileSaveWarning}` : success)
+        setNotice('You have already made an enquiry for this exhibit.')
       } else {
-        const success = 'Your purchase enquiry has been sent to the gallery owner.'
-        setNotice(profileSaveWarning ? `${success} ${profileSaveWarning}` : success)
+        setNotice('Your purchase enquiry has been sent to the gallery owner.')
         if (!isContactPreferenceComplete(profileData)) {
           localStorage.setItem(CONTACT_PREF_PROMPT_KEY, '1')
           setPrefPromptShownThisVisit(false)
@@ -404,7 +408,12 @@ function Dashboard() {
     }
   }
 
-  const displayName = user?.username || 'Collector'
+  const profileFirstName = (profileData.first_name || '').trim()
+  const displayName = profileFirstName || user?.username || 'Collector'
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
 
   return (
     <div className="dashboard">
@@ -413,9 +422,14 @@ function Dashboard() {
           <IconBack />
         </button>
         <span className="dash-topnav__title">Saved Exhibits</span>
-        <button className="dash-avatar" type="button" onClick={() => navigate('/profile')} title="Profile" aria-label="Profile">
-          {displayName.slice(0, 2).toUpperCase()}
-        </button>
+        <div className="dash-topnav__right">
+          <button className="dash-avatar" type="button" onClick={() => navigate('/profile')} title="Profile" aria-label="Profile">
+            {displayName.slice(0, 2).toUpperCase()}
+          </button>
+          <button className="dash-iconbtn dash-iconbtn--logout" type="button" onClick={handleLogout} aria-label="Log out">
+            <IconLogout />
+          </button>
+        </div>
       </header>
 
       <section className="dash-greeting">
@@ -489,9 +503,6 @@ function Dashboard() {
                 <h2 className="dash-card__title">{item.title || item.artist}</h2>
                 <p className="dash-card__artist">{item.artist}</p>
               </div>
-              <button className="dash-card__arrow" type="button" onClick={() => navigate(`/exhibits/${item.id}`)} aria-label="View exhibit">
-                <IconArrowRight />
-              </button>
             </div>
             <span className="dash-tag">{statusLabel(currentStatus)}</span>
             <div>

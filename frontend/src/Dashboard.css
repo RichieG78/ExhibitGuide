@@ -28,6 +28,11 @@
   font-size: 18px;
   color: var(--dash-cream);
 }
+.dash-topnav__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 .dash-iconbtn {
   display: inline-flex;
   align-items: center;
@@ -54,6 +59,15 @@
   font-weight: 600;
   color: var(--dash-gold-light);
   cursor: pointer;
+}
+
+.dash-iconbtn--logout {
+  margin-left: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--dash-gold);
+  border-radius: 16px;
+  color: var(--dash-gold-light);
 }
 
 /* Greeting */
@@ -251,9 +265,10 @@
   z-index: 30;
   background: rgba(0, 0, 0, 0.55);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 18px;
+  overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px 16px;
 }
 
 .dash-modal {
@@ -263,6 +278,20 @@
   background: #1f1b16;
   padding: 18px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.38);
+  max-height: min(86dvh, 760px);
+  overflow-y: auto;
+  animation: dash-modal-drop 0.2s ease-out;
+}
+
+@keyframes dash-modal-drop {
+  from {
+    transform: translateY(-18px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .dash-modal__title {
@@ -366,4 +395,15 @@
   border: none;
   background: var(--dash-gold);
   color: #f6ead5;
+}
+
+@media (max-width: 520px) {
+  .dash-modal-overlay {
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 8px 12px;
+  }
+
+  .dash-modal {
+    max-height: min(88dvh, 800px);
+    padding: 14px;
+  }
 }

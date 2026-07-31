@@ -4,6 +4,7 @@ import './Auth.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+// Step 2 of password reset: user sets a new password using link parameters.
 function PasswordResetConfirmPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()

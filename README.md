@@ -35,13 +35,13 @@ Goal: verify the end-to-end visitor journey from scan to enquiry and saved exhib
 3. On the exhibit page, select **Express Interest in Purchasing** and submit an email
    address. This captures a lead anonymously; confirm the success banner appears.
 4. Create a new account at `/register/`.
-5. After registration, confirm redirect to `/dashboard/` (empty for a new account).
-6. Return to an exhibit and select **Save to watchlist**, then reopen `/dashboard/`
+5. After registration, confirm redirect to `/dashboard` (empty for a new account).
+6. Return to an exhibit and select **Save to watchlist**, then reopen `/dashboard`
    and confirm the work appears with status `watching`.
 7. Select **Enquire** on that dashboard card and confirm the status changes to `enquired`.
 8. Use the dashboard filters (`All`, `Watching`, `Enquired`) to verify state changes.
 9. Open `/profile/` and confirm collector details can be reviewed and updated.
-10. Log out from the dashboard, then confirm `/dashboard/` redirects to `/login`.
+10. Log out from the dashboard, then confirm `/dashboard` redirects to `/login`.
 
 What this flow checks:
 - QR-first public entry route,
@@ -184,10 +184,10 @@ The page must be opened over `http(s)` rather than as a local `file://` document
 - Pitch context and product framing: `Research/ExhibitGuide Pitch Deck.html`
 - Core domain models: `backend/exhibits/models.py`
 - User activity and inquiry models: `backend/users/models.py`
-- Public exhibit flow implementation: `backend/exhibits/views.py`
-- Authentication + dashboard implementation: `backend/users/views.py`
-- Route design and URL architecture: `backend/exhibit_guide_pwa/urls.py`, `backend/exhibits/urls.py`
-- Workflow tests and endpoint coverage: `backend/users/tests.py`, `backend/exhibits/tests.py`
+- Public exhibit flow implementation: `backend/exhibits/views.py`, `frontend/src/ExhibitDetail.jsx`
+- Authentication, profile, and collector API implementation: `backend/users/api_views.py`, `backend/users/serializers.py`
+- Route design and URL architecture: `frontend/src/App.jsx`, `backend/exhibit_guide_pwa/urls.py`, `backend/exhibits/api_urls.py`, `backend/users/api_urls.py`
+- Workflow tests and endpoint coverage: `backend/users/tests_api.py`, `backend/exhibits/tests.py`
 
 ## Submission Structure and Tidy-Up
 To demonstrate clean submission hygiene, this project applies the following checks:
@@ -220,13 +220,13 @@ Frontend (`frontend/`) — separate single-page application:
 ## Core Features Implemented
 - Public scan page and exhibit preview page
 - User registration, login, logout
-- Password reset flow using Django built-in views
+- Password reset flow via API (`/api/auth/password-reset/*`) with React reset screens
 - User profile update page
-- Dashboard with watchlist and status filters
+- Dashboard with scan/watchlist filtering, enquiry flow, and status transitions (watching -> lead -> prospect)
 - Enquiry modal and enquiry workflow
 - Contact preference capture (email/phone/text) during enquiry
 - Optional profile enrichment during enquiry
-- Admin CMS workflows for artists, artworks, shows, exhibits, visitor enquiries (`GalleryInquiry`), and prospect records (`Prospect`)
+- Staff exhibit management in-app (`/manage`) plus Django admin CMS for artists, artworks, shows, exhibits, enquiries (`GalleryInquiry`), and prospects (`Prospect`)
 
 ## Development Evidence (Inception to Tested Endpoints)
 This section provides explicit evidence of software development, not only final features.
@@ -265,9 +265,9 @@ Success criteria defined at project inception:
 |---|---|---|---|---|
 | QR-first exhibit entry | Reduce friction between in-person viewing and digital engagement | `Exhibit` stores `qr_identifier`; `ExhibitByQrView` exposes a public lookup consumed by the React `/qr/:qrId` route | `/qr/<qr_identifier>` (frontend), `/api/exhibits/qr/<qr_identifier>/` (API) | `exhibits/tests.py` covers `qr_identifier` auto-generation underpinning the QR flow |
 | Registration + login | Convert anonymous interest into persistent user state | JWT auth endpoints in `users/api_views.py` consumed by React `AuthContext` (tokens in browser storage, refresh on 401) | `/register`, `/login` (frontend); `/api/auth/register/`, `/api/auth/login/`, `/api/auth/refresh/` (API) | `users/tests_api.py` verifies registration, token issue, and protected-endpoint access |
-| Dashboard watchlist | Keep visitor intent after initial scan | `SavedExhibit` model and dashboard POST actions (`save_exhibit`, `remove_saved_exhibit`) | `/dashboard/` | `users/tests.py` validates idempotent save and remove actions |
-| Enquiry workflow | Turn viewing intent into actionable lead data for gallery follow-up | Dashboard action `send_inquiry` writes `GalleryInquiry` + `Prospect`; validates contact preferences | `/dashboard/` | `users/tests.py` validates inquiry creation and phone-required validation |
-| Profile enrichment during enquiry | Avoid repeatedly asking users for contact details | Optional `save_to_profile` path updates `UserProfile` from enquiry data | `/dashboard/`, `/profile/` | `users/tests.py` verifies profile update from enquiry submission |
+| Dashboard watchlist | Keep visitor intent after initial scan | `SavedExhibit` model + `POST /api/saved/` and `DELETE /api/saved/<exhibit_id>/` from the React dashboard | `/dashboard`, `/api/saved/` | `users/tests_api.py` verifies collection semantics and authenticated access |
+| Enquiry workflow | Turn viewing intent into actionable lead data for gallery follow-up | `POST /api/inquiries/` writes/updates `GalleryInquiry`; repeat submissions are idempotent and can upgrade lead -> prospect via purchase marker | `/dashboard`, `/api/inquiries/`, `/api/collection/` | `users/tests_api.py` validates create, repeat idempotency, and lead-to-prospect upgrade |
+| Profile enrichment during enquiry | Avoid repeatedly asking users for contact details | Dashboard enquiry modal saves profile fields first through `PATCH /api/auth/profile/` then submits enquiry | `/dashboard`, `/profile`, `/api/auth/profile/` | `users/tests_api.py` validates profile patch rules (including preferred contact/phone validation) |
 | Admin CMS for content operations | Give non-developer operators control over exhibit content | Django admin registration/inlines for artist/artwork/show/exhibit and lead records | `/admin/` | Manual assessor steps documented in Persona 2 flow |
 
 ### Development Sequence (Concise Build Narrative)
@@ -284,7 +284,7 @@ This sequence is intended to evidence iterative development from first problem f
 ### Why These Technical Decisions
 - Django ORM over raw SQL: chosen for maintainability, migrations, and relationship integrity.
 - Separate `Artwork` and `Show` entities: supports reusability and avoids data duplication.
-- Built-in Django auth and password reset: secure defaults and reliable delivery for assessment scope.
+- JWT auth + API-first password reset: supports decoupled React frontend while preserving Django security primitives.
 - Admin-as-CMS approach: fastest path to operator usability without building a separate staff frontend.
 - Testing focused on user workflows: validates high-value routes and state transitions rather than only isolated helpers.
 
@@ -295,79 +295,45 @@ Database integration in Django:
 - Relationships use ORM foreign keys and many-to-many fields to enforce data integrity and simplify query logic.
 
 Authentication and authorization in Django:
-- Registration uses `UserCreationForm` in `backend/users/forms.py` and `register` view in `backend/users/views.py`.
-- Login uses Django `AuthenticationForm` in `backend/users/views.py`.
-- Route-level access control is handled with `@login_required` for protected pages such as dashboard/profile in `backend/users/views.py`.
-- Password reset is provided by Django auth views wired in `backend/exhibit_guide_pwa/urls.py`.
+Authentication and authorization in Django:
+- Registration, profile, password reset, and collection/inquiry actions are exposed as REST endpoints in `backend/users/api_views.py`.
+- React route protection uses `RequireAuth` and `RequireStaff` wrappers in `frontend/src/App.jsx`.
+- API-level protection uses DRF permissions (`IsAuthenticated` for user data and `IsStaffOrReadOnly` for exhibit writes).
 
-Code snippet (auth + protected route pattern):
-
-```python
-@login_required
-def dashboard(request):
-	profile = UserProfile.objects.filter(user=request.user).first()
-	# ... protected workflow logic for saved exhibits and inquiries ...
-	return render(request, 'users/dashboard.html', context)
-```
-
-Code snippet (model relationship pattern):
+Code snippet (staff-only writes + public reads pattern):
 
 ```python
-class SavedCollection(models.Model):
-	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_collections')
-	exhibits = models.ManyToManyField(Exhibit, related_name='in_user_collections', blank=True)
+class IsStaffOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return bool(request.user and request.user.is_staff)
 ```
 
 ## Authentication and Authorization Evidence (Inception to Tested)
-This section demonstrates how authentication and authorization were developed iteratively from requirement to verified behavior.
+This section shows how auth and access boundaries are implemented in the current React + API architecture.
 
-### Inception Requirement and Design Intent
-Authentication requirement at inception:
-- persist visitor intent beyond anonymous scan flow,
-- allow users to manage saved exhibits and enquiries over multiple sessions.
-
-Authorization requirement at inception:
-- public users should browse exhibit pages,
-- signed-in users should access personal dashboard/profile,
-- admin-only users should manage CMS content and enquiries in Django admin.
-
-### Implementation Timeline (How)
-1. Added registration/login/logout flow in `backend/users/views.py` using Django auth forms.
-2. Added protected user routes for dashboard/profile using `@login_required`.
-3. Preserved scan context through auth handoff via session key `interest_exhibit_id`.
-4. Wired Django password-reset views in `backend/exhibit_guide_pwa/urls.py`.
-5. Confirmed admin authorization boundary through Django admin access behavior.
-
-### Authentication and Authorization Architecture (What Django Provides)
-Authentication:
-- Django `User` model stores accounts and hashed passwords.
-- `UserCreationForm` and `AuthenticationForm` provide validated account and sign-in flows.
-- `auth_login` and `auth_logout` establish and clear session auth state.
-
-Authorization:
-- `@login_required` enforces route-level protection for signed-in-only views.
-- Django admin authorization restricts `/admin/` to staff users.
-- Django auth middleware/context processors expose request user state to templates and views.
+### Implementation Summary
+1. JWT token issue/refresh is provided by `/api/auth/login/` and `/api/auth/refresh/`.
+2. React stores and refreshes tokens via `AuthContext`, then attaches bearer auth in `authFetch`.
+3. Protected frontend routes (`/dashboard`, `/profile`) use `RequireAuth`; staff routes (`/manage*`) use `RequireStaff`.
+4. User-scoped API endpoints (`/api/auth/profile/`, `/api/collection/`, `/api/saved/`, `/api/inquiries/`) require authentication.
+5. Exhibit writes are limited to staff via `IsStaffOrReadOnly`; public read routes remain open.
 
 Role/access matrix in this project:
 
 | Role | Allowed | Restricted |
 |---|---|---|
-| Guest (anonymous) | `/`, `/exhibits/<id>`, `/qr/<qr_identifier>`, `/scan`, `/register`, `/login`, password reset, and `POST /api/interest/` (lead capture) | `/dashboard`, `/profile`, `/manage`, exhibit writes, admin |
-| Authenticated user | Dashboard, profile, watchlist (`/api/saved/`), enquiries (`/api/inquiries/`) | Exhibit create/edit/delete, `/manage`, Django admin |
-| Staff/admin user | All authenticated routes plus `/manage` exhibit CRUD and `/admin/` CMS workflows | N/A for current scope |
+| Guest (anonymous) | `/`, `/exhibits/<id>`, `/qr/<qr_identifier>`, `/scan`, `/register`, `/login`, `/password-reset`, `/reset-password`, `POST /api/interest/`, public exhibit reads | `/dashboard`, `/profile`, `/manage`, `/api/collection/`, `/api/saved/`, `/api/inquiries/`, exhibit writes, `/admin/` |
+| Authenticated user | Dashboard/profile routes and user-scoped collector APIs | Staff exhibit writes, `/manage*`, Django admin |
+| Staff/admin user | All authenticated routes plus `/manage*` and exhibit CRUD writes, plus `/admin/` CMS workflows | N/A for current scope |
 
 ### Tested Endpoints and Evidence
-Key authentication/authorization tests now included:
-1. `test_profile_requires_login` in `backend/users/tests.py`.
-2. `test_dashboard_requires_login` in `backend/users/tests.py`.
-3. `test_login_honors_next_parameter` in `backend/users/tests.py`.
-4. `test_admin_index_rejects_non_staff_user` in `backend/users/tests.py`.
-
-These tests provide direct evidence that:
-- protected routes cannot be accessed anonymously,
-- authenticated navigation and redirects function correctly,
-- non-staff users are blocked from admin-only workflows.
+Authentication and collector API behavior is covered in `backend/users/tests_api.py`, including:
+1. profile read/update behavior and validation,
+2. password reset request + confirm flow,
+3. inquiry creation, idempotent repeat handling, and lead-to-prospect upgrades,
+4. collection status transitions (`lead` then `prospect`).
 
 ## Data Schema Overview
 Main domain models:
@@ -394,12 +360,12 @@ Design intent:
 - Predictable QR addressing: `Exhibit.save()` auto-generates `qr_identifier` once persisted, creating stable public links.
 
 ## Database Integration Playbook (SQLite, Local Postgres, Connected Postgres)
-This project uses environment-based database switching via `DATABASE_URL` in `backend/exhibit_guide_pwa/settings.py`.
+This project uses environment-based database switching in `backend/exhibit_guide_pwa/settings.py`.
 
 How switching works:
-- If `DATABASE_URL` is present, Django uses that database (typically PostgreSQL in production).
-- If `DATABASE_URL` is missing, Django falls back to local SQLite.
-- This is configured through `dj_database_url.config(...)` in settings.
+- Local/debug mode (`DJANGO_DEBUG=true`): uses `DJANGO_LOCAL_DATABASE_URL` when set, otherwise SQLite at `backend/db.sqlite3`.
+- Production mode (`DJANGO_DEBUG=false`): uses `DATABASE_URL` (preferred) or `DJANGO_PRODUCTION_DATABASE_URL`.
+- Parsing and connection setup is handled through `dj_database_url.config(...)`.
 
 ### Option A: Run with SQLite (local, simplest)
 Use when:
@@ -410,7 +376,8 @@ Commands:
 
 ```bash
 cd backend
-export DATABASE_URL="sqlite:////absolute/path/to/backend/db.sqlite3"
+export DJANGO_DEBUG=true
+unset DATABASE_URL
 /absolute/path/to/venv/bin/python manage.py migrate
 /absolute/path/to/venv/bin/python manage.py runserver
 ```
@@ -431,7 +398,8 @@ GRANT ALL PRIVILEGES ON DATABASE exhibitguide_dev TO exhibitguide_app;
 2. Point Django to local Postgres:
 
 ```bash
-export DATABASE_URL="postgres://exhibitguide_app:change-this-password@127.0.0.1:5432/exhibitguide_dev"
+export DJANGO_DEBUG=true
+export DJANGO_LOCAL_DATABASE_URL="postgres://exhibitguide_app:change-this-password@127.0.0.1:5432/exhibitguide_dev"
 ```
 
 3. Run migrations/app:
@@ -450,6 +418,7 @@ Use when:
 Set:
 
 ```bash
+export DJANGO_DEBUG=false
 export DATABASE_URL="postgres://<user>:<password>@<host>:<port>/<database>"
 ```
 
@@ -482,9 +451,9 @@ How it works:
 2. `_bool_env(...)` and `_int_env(...)` parse environment values safely.
 3. `DEBUG` is derived from environment values (`DJANGO_DEBUG`/`DEBUG`) instead of hard-coded values.
 4. `SECRET_KEY` must be present in non-debug mode; in local debug mode only, a development fallback is used.
-5. `DATABASE_URL` decides database backend:
-   - set `DATABASE_URL` -> Postgres (or another supported URL),
-   - unset `DATABASE_URL` -> SQLite fallback.
+5. Database source is chosen by mode:
+   - `DJANGO_DEBUG=true` -> `DJANGO_LOCAL_DATABASE_URL` or SQLite fallback,
+   - `DJANGO_DEBUG=false` -> `DATABASE_URL` (or `DJANGO_PRODUCTION_DATABASE_URL`).
 6. `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` are built from environment values to support local and hosted domains.
 
 Why this is beneficial:
@@ -507,13 +476,13 @@ Example `.env` for local Postgres:
 DJANGO_DEBUG=true
 DJANGO_SECRET_KEY=replace-with-local-dev-key
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
-DATABASE_URL=postgres://exhibitguide_app:change-this-password@127.0.0.1:5432/exhibitguide_dev
+DJANGO_LOCAL_DATABASE_URL=postgres://exhibitguide_app:change-this-password@127.0.0.1:5432/exhibitguide_dev
 DJANGO_DB_SSL_REQUIRE=false
 ```
 
 Local validation steps:
-1. Start with SQLite (`DATABASE_URL` unset), run `manage.py migrate`, then `manage.py check`.
-2. Switch to Postgres (`DATABASE_URL` set), run `manage.py migrate`, then `manage.py check`.
+1. Start with SQLite (`DJANGO_DEBUG=true`, `DJANGO_LOCAL_DATABASE_URL` unset), run `manage.py migrate`, then `manage.py check`.
+2. Switch to Postgres (`DJANGO_LOCAL_DATABASE_URL` set), run `manage.py migrate`, then `manage.py check`.
 3. Run tests in each mode where available to confirm parity for your local environment.
 
 ## Admin CMS Capability (Current State)
@@ -533,10 +502,10 @@ Implemented admin operations:
 
 | Requirement | Status | Evidence |
 |---|---|---|
-| Demonstrate understanding and apply key concepts of Django | Met | Django app structure, forms, views, templates, auth views, messages, and admin are used throughout |
+| Demonstrate understanding and apply key concepts of Django | Met | Django app structure, DRF views/viewsets/serializers, model relationships, admin, and deployment settings are used throughout |
 | Show clear understanding of database integration in Django | Met | ORM models with relationships, migrations, query filtering, and admin data operations |
 | Show clear understanding of authentication and authorisation | Met | JWT register/login/refresh endpoints, `IsAuthenticated` per-user endpoints, staff-only exhibit writes (`IsStaffOrReadOnly`), protected React routes, token-based password reset |
-| Demonstrate clean code structure including templates, styling, JavaScript | Met (with note) | Structure is a decoupled React SPA (`frontend/`) against a Django REST API (`backend/`); server-rendered templates and crispy-forms were retired on this branch. Styling is a custom CSS design system implementing the project's Figma designs rather than Bootstrap |
+| Demonstrate clean code structure including templates, styling, JavaScript | Met (with note) | Structure is a decoupled React SPA (`frontend/`) against a Django REST API (`backend/`); styling is a custom CSS design system implementing the project's Figma designs |
 | Show evidence of a hosted Django app that is fully functional and accessible | Partially met | Hosting configuration is present; assessor should verify live uptime and route functionality at marking time |
 
 Notes for assessors:
@@ -548,7 +517,7 @@ Notes for assessors:
 | Requirement | Status | Evidence |
 |---|---|---|
 | Demonstrate understanding and apply key concepts of Front End development | Met | Responsive templates, page flows, CSS/JS behavior on public and authenticated pages |
-| Show clear understanding of Back End development | Met | Django views/forms/models, route handling, server-side validation, admin operations |
+| Show clear understanding of Back End development | Met | DRF API views/viewsets/serializers, Django ORM models, route handling, validation, and admin operations |
 | Show clear understanding of implementing a secure web application | Met | CSRF middleware, Django auth, password hashing/validators, protected routes |
 | Demonstrate clear and concise communication in documentation | Partially met | README and code docstrings/comments are present; presentation delivery is outside repository scope |
 | Show evidence of a hosted web app that is fully functional and accessible | Partially met | Deployment-oriented dependencies/config are present; live verification needed during assessment |
@@ -593,20 +562,20 @@ Admin: `/admin/`
 
 ## Automated Testing
 Current test run result:
-- Total tests: 27
-- Status: all passing (with explicit SQLite override)
+- Total tests: 14
+- Status: all passing with local SQLite override (`DJANGO_DEBUG=1`, `DJANGO_LOCAL_DATABASE_URL=sqlite:////tmp/exhibitguide_test.sqlite3`)
 
 Endpoint-oriented testing evidence:
-- Auth flow (`/register/`, `/login/`) is validated in `users/tests.py`.
-- Dashboard actions (`/dashboard/`) are validated for save/remove/filter/inquiry behavior in `users/tests.py`.
-- Profile access and profile persistence (`/profile/`) are validated in `users/tests.py`.
-- Exhibit model integrity supporting public exhibit routes is validated in `exhibits/tests.py`.
+- Collector API behavior (`/api/auth/profile/`, `/api/auth/password-reset/*`, `/api/collection/`, `/api/inquiries/`) is validated in `users/tests_api.py`.
+- Password reset email generation/link structure is validated in `users/tests_api.py` using `locmem` email backend.
+- Inquiry idempotency and lead/prospect transitions are validated in `users/tests_api.py`.
+- Exhibit model integrity supporting QR/public routing is validated in `exhibits/tests.py`.
 
 ### Key Test Design Samples
-1. Registration flow test (`users/tests.py`): posts valid credentials and asserts redirect to `/dashboard/` plus user creation.
-2. Dashboard idempotency test (`users/tests.py`): submits `save_exhibit` twice and asserts only one `SavedExhibit` row exists.
-3. Inquiry validation test (`users/tests.py`): requests phone contact without a phone number and asserts no inquiry/prospect is created.
-4. Profile update from inquiry test (`users/tests.py`): submits enquiry with `save_to_profile` and asserts profile fields persist.
+1. Profile patch validation (`users/tests_api.py`): requires phone when preferred contact is `phone` or `text`.
+2. Password reset request + confirm (`users/tests_api.py`): generates reset link and confirms password update.
+3. Inquiry repeat behavior (`users/tests_api.py`): duplicate inquiry returns `already_expressed=true` without extra rows.
+4. Collection status progression (`users/tests_api.py`): verifies `lead` status and upgrade to `prospect`.
 
 These tests were selected to verify high-value business behavior and data integrity, not only individual helper functions.
 
@@ -615,14 +584,14 @@ Run all tests with a deterministic local SQLite database:
 
 ```bash
 cd backend
-DATABASE_URL=sqlite:////absolute/path/to/backend/db.sqlite3 /absolute/path/to/venv/bin/python manage.py test
+DJANGO_DEBUG=1 DJANGO_DB_SSL_REQUIRE=0 DJANGO_LOCAL_DATABASE_URL=sqlite:////tmp/exhibitguide_test.sqlite3 /absolute/path/to/venv/bin/python manage.py test
 ```
 
 Run focused suites used for assessment demonstration:
 
 ```bash
 cd backend
-DATABASE_URL=sqlite:////absolute/path/to/backend/db.sqlite3 /absolute/path/to/venv/bin/python manage.py test users.tests exhibits.tests
+DJANGO_DEBUG=1 DJANGO_DB_SSL_REQUIRE=0 DJANGO_LOCAL_DATABASE_URL=sqlite:////tmp/exhibitguide_test.sqlite3 /absolute/path/to/venv/bin/python manage.py test users.tests_api exhibits.tests
 ```
 
 PostgreSQL local test note:
@@ -756,6 +725,14 @@ Environment variables:
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://` origin of this service |
 | `DJANGO_CORS_ALLOWED_ORIGINS` | `https://` origin of the **frontend** static site |
 | `FRONTEND_URL` | `https://` origin of the **frontend** static site (used to build password-reset links) |
+| `DJANGO_EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` |
+| `DJANGO_DEFAULT_FROM_EMAIL` | Sender address (for example `noreply@yourdomain.com`) |
+| `DJANGO_EMAIL_HOST` | SMTP host from your provider |
+| `DJANGO_EMAIL_PORT` | SMTP port (usually `587` for TLS or `465` for SSL) |
+| `DJANGO_EMAIL_HOST_USER` | SMTP username |
+| `DJANGO_EMAIL_HOST_PASSWORD` | SMTP password or app password |
+| `DJANGO_EMAIL_USE_TLS` | `true` for STARTTLS setups (usually with port `587`) |
+| `DJANGO_EMAIL_USE_SSL` | `false` unless your provider requires implicit SSL |
 
 ### Service 2 — React frontend (Static Site)
 
@@ -821,9 +798,9 @@ Notes:
   images uploaded through the staff interface are lost on redeploy. Seeded exhibits are
   unaffected because they reference external image URLs. Persistent uploads would require
   object storage (for example S3 or Cloudinary via `django-storages`).
-- **Password-reset emails are not delivered by default.** `EMAIL_BACKEND` defaults to the
-  console backend, which writes reset links to the service logs. Set `DJANGO_EMAIL_BACKEND`
-  to an SMTP backend with credentials to send real messages.
+- **Password-reset delivery requires SMTP credentials.** Production now defaults to SMTP,
+   but messages still fail if provider variables are missing or incorrect
+   (`DJANGO_EMAIL_HOST`, `DJANGO_EMAIL_HOST_USER`, `DJANGO_EMAIL_HOST_PASSWORD`, and TLS/SSL settings).
 
 ## Known Gaps and Next Steps
 To close remaining checklist gaps:

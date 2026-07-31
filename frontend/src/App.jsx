@@ -29,6 +29,7 @@ function QrRoute() {
 }
 
 function App() {
+  // Central route map for all public pages, member pages, and staff pages.
   return (
     <Routes>
       <Route path="/" element={<ExhibitList />} />

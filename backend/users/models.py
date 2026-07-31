@@ -68,7 +68,12 @@ class UserProfile(models.Model):
         if not self.image:
             return
 
-        image_file = Image.open(self.image.path)
+        try:
+            image_file = Image.open(self.image.path)
+        except (FileNotFoundError, OSError, ValueError):
+            # Keep profile updates resilient when file storage is missing/stale.
+            return
+
         if image_file.height > 300 or image_file.width > 300:
             # Resize in place so uploaded profile pictures stay lightweight.
             image_file.thumbnail((300, 300))

@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import './Auth.css'
 
+// Sign-in page for collectors. After login, users are redirected either to
+// their intended destination or dashboard.
 function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -26,6 +28,7 @@ function LoginPage() {
     setSubmitting(true)
     setError('')
     try {
+      // On success, re-enter the flow the user came from (or dashboard).
       await login(username, password)
       navigate(next, { replace: true })
     } catch (err) {

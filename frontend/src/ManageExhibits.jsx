@@ -12,6 +12,7 @@ function ManageExhibits() {
   const [status, setStatus] = useState('loading')
 
   const load = useCallback(() => {
+    // Public list endpoint is reused here; write actions remain staff-protected.
     setStatus('loading')
     fetch(`${API_BASE}/api/exhibits/`)
       .then((r) => r.json())
@@ -28,6 +29,7 @@ function ManageExhibits() {
 
   const remove = (id) => {
     if (!window.confirm('Delete this exhibit? This cannot be undone.')) return
+    // Delete uses authenticated staff token via authFetch.
     authFetch(`/api/exhibits/${id}/`, { method: 'DELETE' }).then((res) => {
       if (res.ok) load()
     })

@@ -322,6 +322,30 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # since the server-rendered auth pages were retired in favour of the React app.
 LOGIN_URL = '/admin/login/'
 
-EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
-DEFAULT_FROM_EMAIL = os.getenv('DJANGO_DEFAULT_FROM_EMAIL', 'noreply@exhibitguide.local')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
+# Email delivery:
+# - Local DEBUG defaults to console backend (developer-friendly).
+# - Production defaults to SMTP backend (real outbound mail).
+EMAIL_BACKEND = os.getenv(
+    'DJANGO_EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'
+    if DEBUG
+    else 'django.core.mail.backends.smtp.EmailBackend',
+)
+DEFAULT_FROM_EMAIL = os.getenv('DJANGO_DEFAULT_FROM_EMAIL', 'noreply@exhibitguide.local')
+SERVER_EMAIL = os.getenv('DJANGO_SERVER_EMAIL', DEFAULT_FROM_EMAIL)
+
+# SMTP transport settings (used when EMAIL_BACKEND is SMTP).
+EMAIL_HOST = os.getenv('DJANGO_EMAIL_HOST', 'localhost')
+EMAIL_PORT = _int_env('DJANGO_EMAIL_PORT', 587 if not DEBUG else 25)
+EMAIL_HOST_USER = os.getenv('DJANGO_EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('DJANGO_EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = _bool_env('DJANGO_EMAIL_USE_TLS', not DEBUG)
+EMAIL_USE_SSL = _bool_env('DJANGO_EMAIL_USE_SSL', False)
+EMAIL_TIMEOUT = _int_env('DJANGO_EMAIL_TIMEOUT', 20)
+
+if EMAIL_USE_TLS and EMAIL_USE_SSL:
+    raise ImproperlyConfigured(
+        'Set only one of DJANGO_EMAIL_USE_TLS or DJANGO_EMAIL_USE_SSL, not both.'
+    )

@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './AuthContext.jsx'
 
+// Bootstraps the React app with routing and auth state available everywhere.
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

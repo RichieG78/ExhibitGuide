@@ -4,6 +4,7 @@ import './Auth.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+// Step 1 of password reset: user submits email to receive a reset link.
 function PasswordResetRequestPage() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState('idle') // idle | submitting | done

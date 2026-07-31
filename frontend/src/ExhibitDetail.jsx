@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import ExhibitImage from './ExhibitImage'
 import InterestModal from './InterestModal'
@@ -27,6 +27,9 @@ const IconDashboard = () => (
 )
 const IconProfile = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21a8 8 0 0 0-16 0" /><circle cx="12" cy="8" r="4" /></svg>
+)
+const IconLogout = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
 )
 const IconHeadphones = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2" /><rect x="3" y="14" width="4" height="7" rx="1.5" /><rect x="17" y="14" width="4" height="7" rx="1.5" /></svg>
@@ -62,7 +65,8 @@ function getDefaultTab() {
 }
 
 function ExhibitDetail({ id, qrId }) {
-  const { user, authFetch } = useAuth()
+  const navigate = useNavigate()
+  const { user, authFetch, logout } = useAuth()
   const [exhibit, setExhibit] = useState(null)
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [error, setError] = useState('')
@@ -167,6 +171,11 @@ function ExhibitDetail({ id, qrId }) {
     }
   }
 
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
+
   return (
     <div className="detail-screen">
       {/* Header */}
@@ -186,6 +195,9 @@ function ExhibitDetail({ id, qrId }) {
               <Link to="/profile" className="detail-icon-btn" aria-label="Go to profile">
                 <IconProfile />
               </Link>
+              <button className="detail-icon-btn" type="button" aria-label="Log out" onClick={handleLogout}>
+                <IconLogout />
+              </button>
             </>
           )}
           <button className="detail-icon-btn" type="button" aria-label="Share" onClick={() => setNotice('Sharing is coming in a later phase.')}>

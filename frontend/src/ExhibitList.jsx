@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import ExhibitImage from './ExhibitImage'
 
@@ -8,10 +8,16 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 // Fetches all exhibits and shows them as a grid of cards.
 // Each card links to that exhibit's detail page at /exhibits/:id.
 function ExhibitList() {
-  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const [exhibits, setExhibits] = useState([])
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [error, setError] = useState('')
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
 
   useEffect(() => {
     fetch(`${API_BASE}/api/exhibits/`)
@@ -51,6 +57,9 @@ function ExhibitList() {
               <Link to="/login" className="list-topnav__btn">Member sign in</Link>
               <Link to="/register" className="list-topnav__btn">Create collector account</Link>
             </>
+          )}
+          {user && (
+            <button type="button" className="list-topnav__btn" onClick={handleLogout}>Log out</button>
           )}
           <a href="/exhibit-qr-codes.html" className="list-topnav__btn">Printable QR code sheet</a>
         </nav>

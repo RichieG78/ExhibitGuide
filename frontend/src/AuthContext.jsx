@@ -3,6 +3,8 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const AuthContext = createContext(null)
 
+// Provides app-wide auth state (user, tokens, login/register/logout) and an
+// authenticated fetch helper that transparently refreshes expired access tokens.
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [ready, setReady] = useState(false)
@@ -64,6 +66,7 @@ export function AuthProvider({ children }) {
   }, [logout])
 
   const login = async (username, password) => {
+    // Exchange credentials for JWT tokens, then hydrate current user details.
     const res = await fetch(`${API_BASE}/api/auth/login/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -77,6 +80,7 @@ export function AuthProvider({ children }) {
   }
 
   const register = async (username, email, password) => {
+    // Create account and store the initial JWT token pair returned by backend.
     const res = await fetch(`${API_BASE}/api/auth/register/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

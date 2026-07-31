@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import './Auth.css'
 
+// Account creation page for new collectors.
 function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -24,6 +25,7 @@ function RegisterPage() {
     setError('')
     try {
       await register(username, email, password)
+      // If registration started from an exhibit interest flow, continue it.
       const next = interestExhibit
         ? `/dashboard?interest_exhibit=${encodeURIComponent(interestExhibit)}`
         : '/dashboard'

@@ -36,6 +36,7 @@ function ExhibitForm() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
+    // Load dropdown options and existing exhibit data (when editing).
     fetch(`${API_BASE}/api/artworks/`).then((r) => r.json()).then(setArtworks)
     fetch(`${API_BASE}/api/shows/`).then((r) => r.json()).then(setShows)
     if (isEdit) {
@@ -65,6 +66,7 @@ function ExhibitForm() {
     e.preventDefault()
     setSubmitting(true)
     setError('')
+    // Multipart payload allows optional image upload plus text fields.
     const fd = new FormData()
     fd.append('gallery_name', form.gallery_name)
     if (form.artwork) fd.append('artwork', form.artwork)
