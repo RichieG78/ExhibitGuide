@@ -141,9 +141,15 @@ class CollectionView(APIView):
         saved_ids = set(
             SavedExhibit.objects.filter(user=request.user).values_list('exhibit_id', flat=True)
         )
-        enquired_ids = set(
-            GalleryInquiry.objects.filter(user=request.user).values_list('exhibit_id', flat=True)
+        inquiries = list(
+            GalleryInquiry.objects.filter(user=request.user).values_list('exhibit_id', 'message')
         )
+        enquired_ids = {exhibit_id for exhibit_id, _message in inquiries}
+        prospect_ids = {
+            exhibit_id
+            for exhibit_id, message in inquiries
+            if GalleryInquiry.PURCHASE_INTENT_MARKER in (message or '')
+        }
         engaged_ids = saved_ids | enquired_ids
         exhibits = (
             Exhibit.objects.filter(id__in=engaged_ids)
@@ -153,7 +159,11 @@ class CollectionView(APIView):
         serializer = CollectionItemSerializer(
             exhibits,
             many=True,
-            context={'request': request, 'enquired_ids': enquired_ids},
+            context={
+                'request': request,
+                'enquired_ids': enquired_ids,
+                'prospect_ids': prospect_ids,
+            },
         )
         return Response(serializer.data)
 
@@ -189,7 +199,7 @@ class SavedDeleteView(APIView):
 
 
 class InquiryCreateView(generics.CreateAPIView):
-    """Send a gallery inquiry for an exhibit (marks it 'enquired')."""
+    """Send a gallery inquiry for an exhibit and optionally mark purchase intent."""
 
     serializer_class = InquirySerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -199,32 +209,51 @@ class InquiryCreateView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         exhibit = serializer.validated_data.get('exhibit')
-        exists = GalleryInquiry.objects.filter(user=request.user, exhibit=exhibit).exists()
-        if exists:
-            return Response(
-                {
-                    'detail': 'Interest already expressed for this exhibit.',
-                    'already_expressed': True,
-                },
-                status=status.HTTP_200_OK,
-            )
-
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        payload = {
-            **serializer.data,
-            'detail': 'Interest notified to the gallery.',
-            'already_expressed': False,
-        }
-        return Response(payload, status=status.HTTP_201_CREATED, headers=headers)
-
-    def perform_create(self, serializer):
-        exhibit = serializer.validated_data.get('exhibit')
         message = (serializer.validated_data.get('message') or '').strip()
+        purchase_intent = bool(serializer.validated_data.get('purchase_intent'))
+        marker = GalleryInquiry.PURCHASE_INTENT_MARKER
+
         if not message:
             message = (
                 f'I am interested in {exhibit.artwork}. Please contact me.'
                 if exhibit
                 else 'I am interested in this artwork. Please contact me.'
             )
-        serializer.save(user=self.request.user, message=message)
+        if purchase_intent and marker not in message:
+            message = f'{message}\n\n{marker}'
+
+        existing = GalleryInquiry.objects.filter(user=request.user, exhibit=exhibit).first()
+        if existing:
+            upgraded = False
+            if purchase_intent and marker not in (existing.message or ''):
+                existing.message = f'{(existing.message or "").strip()}\n\n{message}'.strip()
+                existing.save(update_fields=['message'])
+                upgraded = True
+
+            detail = (
+                'Existing lead upgraded to prospect with purchase intent.'
+                if upgraded
+                else 'Interest already expressed for this exhibit.'
+            )
+            return Response(
+                {
+                    'detail': detail,
+                    'already_expressed': True,
+                    'upgraded_to_prospect': upgraded,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        inquiry = GalleryInquiry.objects.create(
+            user=request.user,
+            exhibit=exhibit,
+            message=message,
+        )
+        headers = self.get_success_headers(self.get_serializer(inquiry).data)
+        payload = {
+            **self.get_serializer(inquiry).data,
+            'detail': 'Interest notified to the gallery.',
+            'already_expressed': False,
+            'upgraded_to_prospect': purchase_intent,
+        }
+        return Response(payload, status=status.HTTP_201_CREATED, headers=headers)

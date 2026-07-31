@@ -41,6 +41,8 @@ class UserApiProfileTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['first_name'], 'Ada')
+        self.assertEqual(response.data['last_name'], 'Lovelace')
         self.user.refresh_from_db()
         self.assertEqual(self.user.username, 'collector-updated')
         self.assertEqual(self.user.email, 'updated@example.com')
@@ -182,3 +184,52 @@ class UserApiInquiryTests(TestCase):
         self.assertEqual(response.data['already_expressed'], True)
         self.assertIn('already', response.data['detail'].lower())
         self.assertEqual(GalleryInquiry.objects.filter(user=self.user, exhibit=self.exhibit).count(), 1)
+
+    def test_purchase_intent_upgrades_existing_lead_to_prospect(self):
+        inquiry = GalleryInquiry.objects.create(
+            user=self.user,
+            exhibit=self.exhibit,
+            message='Initial callback request',
+        )
+
+        response = self.client.post(
+            '/api/inquiries/',
+            {
+                'exhibit': self.exhibit.id,
+                'purchase_intent': True,
+                'message': 'Interested in acquisition terms',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['already_expressed'], True)
+        self.assertEqual(response.data['upgraded_to_prospect'], True)
+
+        inquiry.refresh_from_db()
+        self.assertIn(GalleryInquiry.PURCHASE_INTENT_MARKER, inquiry.message)
+
+    def test_collection_returns_lead_then_prospect_status(self):
+        GalleryInquiry.objects.create(
+            user=self.user,
+            exhibit=self.exhibit,
+            message='Please call me back',
+        )
+
+        lead_response = self.client.get('/api/collection/')
+        self.assertEqual(lead_response.status_code, 200)
+        self.assertEqual(lead_response.data[0]['status'], 'lead')
+
+        self.client.post(
+            '/api/inquiries/',
+            {
+                'exhibit': self.exhibit.id,
+                'purchase_intent': True,
+                'message': 'Ready to discuss purchase',
+            },
+            format='json',
+        )
+
+        prospect_response = self.client.get('/api/collection/')
+        self.assertEqual(prospect_response.status_code, 200)
+        self.assertEqual(prospect_response.data[0]['status'], 'prospect')

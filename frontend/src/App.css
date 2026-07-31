@@ -49,35 +49,71 @@
   color: var(--muted);
   font-size: 0.95rem;
 }
-/* Prominent entry point to the QR start page (the intended first stop). */
-.list-startbanner {
-  display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+
+.list-topnav {
   margin-top: 1rem;
-  padding: 0.85rem 1.1rem;
-  background: var(--surface-warm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.list-topnav__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: linear-gradient(180deg, #f2e4cf 0%, #ead8bd 100%);
+  color: #3a2b17;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.list-topnav__btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.09);
+}
+
+.list-howto {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
   border: 1px solid var(--border);
   border-radius: 12px;
-  text-decoration: none;
-  color: inherit;
-  transition: box-shadow 0.15s ease;
+  background: var(--surface);
 }
-.list-startbanner:hover {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+
+.list-howto__title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  color: var(--ink);
 }
-.list-startbanner__label {
-  flex-shrink: 0;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent);
+
+.list-howto__steps {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.55rem;
 }
-.list-startbanner__text {
-  font-size: 0.9rem;
+
+.list-howto__steps li {
   color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.list-howto__steps strong {
+  display: block;
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.list-howto__steps span {
+  display: block;
+  color: var(--muted);
 }
 
 .list-links {
@@ -197,4 +233,31 @@
 .exhibit-price {
   margin: 0.25rem 0 0;
   font-weight: 600;
+}
+
+.exhibit-qr {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  text-decoration: none;
+}
+
+.exhibit-qr__img {
+  width: min(100%, 178px);
+  height: auto;
+  display: block;
+  border-radius: 4px;
+}
+
+.exhibit-qr__hint {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
 }

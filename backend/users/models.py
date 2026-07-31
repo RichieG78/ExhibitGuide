@@ -112,6 +112,8 @@ class SavedCollection(models.Model):
 class GalleryInquiry(models.Model):
     """Message a user sends to the gallery about a specific exhibit."""
 
+    PURCHASE_INTENT_MARKER = '[PURCHASE_INTENT]'
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='gallery_inquiries')
     exhibit = models.ForeignKey(Exhibit, on_delete=models.CASCADE, related_name='gallery_inquiries')
     message = models.TextField()

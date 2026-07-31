@@ -42,26 +42,48 @@ function ExhibitList() {
     <main className="page">
       <header className="list-header">
         <h1 className="list-title">ExhibitGuide</h1>
-        <p className="list-sub">{exhibits.length} works · served live from the Django REST API</p>
-        <a href="/start.html" className="list-startbanner">
-          <span className="list-startbanner__label">Start here</span>
-          <span className="list-startbanner__text">
-            Scan a QR code to enter the gallery — the way a visitor arrives
-          </span>
-        </a>
+        <p className="list-sub">Start here: scan a code, open a work, and follow the visitor journey end-to-end.</p>
+
+        <nav className="list-topnav" aria-label="Primary actions">
+          <Link to="/scan" className="list-topnav__btn">Enter the gallery</Link>
+          {!user && (
+            <>
+              <Link to="/login" className="list-topnav__btn">Member sign in</Link>
+              <Link to="/register" className="list-topnav__btn">Create collector account</Link>
+            </>
+          )}
+          <a href="/exhibit-qr-codes.html" className="list-topnav__btn">Printable QR code sheet</a>
+        </nav>
+
+        <section className="list-howto" aria-label="How to try ExhibitGuide">
+          <h2 className="list-howto__title">How to try it</h2>
+          <ol className="list-howto__steps">
+            <li>
+              <strong>Open your phone camera</strong>
+              <span>Any modern iPhone or Android camera can read QR codes directly.</span>
+            </li>
+            <li>
+              <strong>Scan a code from a wall label</strong>
+              <span>Use the QR links below or the printable sheet to simulate gallery labels.</span>
+            </li>
+            <li>
+              <strong>Read, listen, and watch from the artwork page</strong>
+              <span>No account is required to consume content.</span>
+            </li>
+            <li>
+              <strong>Express interest to notify the gallery</strong>
+              <span>Then continue to dashboard to see scans, enquiries, and follow-up signals.</span>
+            </li>
+          </ol>
+        </section>
+
         <div className="list-links">
-          <Link to="/scan" className="list-scan-link">Enter the gallery — scan experience →</Link>
           {user ? (
             <>
               <Link to="/dashboard" className="list-scan-link">My dashboard →</Link>
               <Link to="/profile" className="list-scan-link">My profile →</Link>
             </>
-          ) : (
-            <>
-              <Link to="/login" className="list-scan-link">Member sign in →</Link>
-              <Link to="/register" className="list-scan-link">Create collector account →</Link>
-            </>
-          )}
+          ) : null}
           {user?.is_staff && (
             <Link to="/manage" className="list-scan-link">Manage exhibits (staff) →</Link>
           )}
@@ -70,7 +92,7 @@ function ExhibitList() {
       <ul className="exhibit-grid">
         {exhibits.map((exhibit) => (
           <li key={exhibit.id} className="exhibit-card">
-            <Link to={`/exhibits/${exhibit.id}`} className="exhibit-link">
+            <Link to={exhibit.qr_identifier ? `/qr/${exhibit.qr_identifier}` : `/exhibits/${exhibit.id}`} className="exhibit-link">
               <ExhibitImage exhibit={exhibit} className="exhibit-image" />
               <div className="exhibit-body">
                 <h2 className="exhibit-title">{exhibit.artist || 'Unknown artist'}</h2>
@@ -81,6 +103,18 @@ function ExhibitList() {
                     ? `${exhibit.currency} ${exhibit.price.toLocaleString()}`
                     : 'Price on request'}
                 </p>
+
+                {exhibit.qr_identifier && (
+                  <div className="exhibit-qr" aria-label={`QR ${exhibit.qr_identifier} for ${exhibit.title || exhibit.artist || 'this exhibit'}`}>
+                    <img
+                      className="exhibit-qr__img"
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(`${window.location.origin}/qr/${exhibit.qr_identifier}`)}`}
+                      alt={`QR code for ${exhibit.title || exhibit.artist || 'exhibit'}`}
+                      loading="lazy"
+                    />
+                    <span className="exhibit-qr__hint">Scan this code or tap this card to open</span>
+                  </div>
+                )}
               </div>
             </Link>
           </li>

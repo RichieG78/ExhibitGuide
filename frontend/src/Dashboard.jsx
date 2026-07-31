@@ -7,7 +7,21 @@ import './Dashboard.css'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const PENDING_INTEREST_KEY = 'eg_interest_exhibit_id'
 const CONTACT_PREF_PROMPT_KEY = 'eg_contact_pref_prompt'
-const FILTERS = ['Your scans', 'Shows', 'Enquired', 'Acquired']
+const FILTERS = ['Your scans', 'Enquired', 'Shows', 'Acquired']
+
+function normalizeStatus(rawStatus) {
+  if (rawStatus === 'prospect') return 'prospect'
+  if (rawStatus === 'lead' || rawStatus === 'enquired') return 'lead'
+  if (rawStatus === 'acquired') return 'acquired'
+  return 'watching'
+}
+
+function statusLabel(status) {
+  if (status === 'prospect') return 'Enquired'
+  if (status === 'lead') return 'Interest Notified to Gallery'
+  if (status === 'acquired') return 'Acquired'
+  return 'Saved'
+}
 
 function isContactPreferenceComplete(profile) {
   const method = (profile?.preferred_contact_method || '').trim()
@@ -18,6 +32,10 @@ function isContactPreferenceComplete(profile) {
   if (method === 'email') return Boolean(email)
   if (method === 'phone' || method === 'text') return Boolean(phone)
   return false
+}
+
+function hasProfileName(profile) {
+  return Boolean((profile?.first_name || '').trim() && (profile?.last_name || '').trim())
 }
 
 const IconBack = () => (
@@ -38,6 +56,8 @@ function Dashboard() {
   const [filter, setFilter] = useState('Your scans')
   const [showFilter, setShowFilter] = useState('All shows')
   const [contactMethod, setContactMethod] = useState('email')
+  const [contactFirstName, setContactFirstName] = useState('')
+  const [contactLastName, setContactLastName] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [note, setNote] = useState('')
@@ -45,7 +65,13 @@ function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false)
   const [activeInquiryItem, setActiveInquiryItem] = useState(null)
   const [submittingInquiry, setSubmittingInquiry] = useState(false)
-  const [profileData, setProfileData] = useState({ email: '', phone: '', preferred_contact_method: '' })
+  const [profileData, setProfileData] = useState({
+    email: '',
+    phone: '',
+    preferred_contact_method: '',
+    first_name: '',
+    last_name: '',
+  })
   const [profileLoaded, setProfileLoaded] = useState(false)
   const [autoSavingInterest, setAutoSavingInterest] = useState(false)
   const [prefModalOpen, setPrefModalOpen] = useState(false)
@@ -93,6 +119,8 @@ function Dashboard() {
           email: data.email || '',
           phone: data.phone || '',
           preferred_contact_method: data.preferred_contact_method || '',
+          first_name: data.first_name || '',
+          last_name: data.last_name || '',
         })
         setContactEmail(data.email || '')
         setPrefEmail(data.email || '')
@@ -121,7 +149,7 @@ function Dashboard() {
   useEffect(() => {
     if (!interestExhibitId || autoSavedRef.current || status !== 'ready') return
     const alreadyInWatchlist = items.some(
-      (item) => String(item.id) === String(interestExhibitId) && item.status !== 'enquired'
+      (item) => String(item.id) === String(interestExhibitId) && normalizeStatus(item.status) === 'watching'
     )
     const alreadyInCollection = items.some((item) => String(item.id) === String(interestExhibitId))
 
@@ -162,8 +190,19 @@ function Dashboard() {
   }, [items])
 
   const visible = useMemo(() => {
-    if (filter === 'Enquired' || filter === 'Acquired') {
-      return items.filter((item) => item.status === filter.toLowerCase())
+    if (filter === 'Your scans') {
+      return items.filter((item) => {
+        const state = normalizeStatus(item.status)
+        return state === 'lead' || state === 'prospect'
+      })
+    }
+
+    if (filter === 'Enquired') {
+      return items.filter((item) => normalizeStatus(item.status) === 'prospect')
+    }
+
+    if (filter === 'Acquired') {
+      return items.filter((item) => normalizeStatus(item.status) === 'acquired')
     }
 
     if (filter === 'Shows' && showFilter !== 'All shows') {
@@ -177,6 +216,8 @@ function Dashboard() {
     if (prefModalOpen) return
     setActiveInquiryItem(item)
     setContactMethod(profileData.preferred_contact_method || 'email')
+    setContactFirstName(profileData.first_name || '')
+    setContactLastName(profileData.last_name || '')
     setContactEmail(profileData.email || user?.email || '')
     setContactPhone(profileData.phone || '')
     setNote('')
@@ -252,10 +293,28 @@ function Dashboard() {
 
     const cleanEmail = (contactEmail || '').trim()
     const cleanPhone = (contactPhone || '').trim()
+    const cleanFirstName = (contactFirstName || '').trim()
+    const cleanLastName = (contactLastName || '').trim()
     const profileEmail = (profileData.email || user?.email || '').trim()
     const profilePhone = (profileData.phone || '').trim()
+    const profileFirstName = (profileData.first_name || '').trim()
+    const profileLastName = (profileData.last_name || '').trim()
     const resolvedEmail = cleanEmail || profileEmail
     const resolvedPhone = cleanPhone || profilePhone
+    const resolvedFirstName = cleanFirstName || profileFirstName
+    const resolvedLastName = cleanLastName || profileLastName
+    const needsNameCapture = !hasProfileName(profileData)
+
+    if (needsNameCapture) {
+      if (!resolvedFirstName) {
+        setModalError('Please add your first name to continue.')
+        return
+      }
+      if (!resolvedLastName) {
+        setModalError('Please add your last name to continue.')
+        return
+      }
+    }
 
     if (contactMethod === 'email' && !resolvedEmail) {
       setModalError('Please add your email address to continue.')
@@ -269,9 +328,36 @@ function Dashboard() {
     setSubmittingInquiry(true)
     setModalError('')
     try {
+      if (needsNameCapture) {
+        const profileRes = await authFetch('/api/auth/profile/', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: resolvedFirstName,
+            last_name: resolvedLastName,
+          }),
+        })
+        const profileUpdate = await profileRes.json().catch(() => ({}))
+        if (!profileRes.ok) {
+          throw new Error(
+            profileUpdate.detail ||
+            profileUpdate.first_name?.[0] ||
+            profileUpdate.last_name?.[0] ||
+            'Could not save your name to profile.'
+          )
+        }
+
+        setProfileData((prev) => ({
+          ...prev,
+          first_name: profileUpdate.first_name || resolvedFirstName,
+          last_name: profileUpdate.last_name || resolvedLastName,
+        }))
+      }
+
       const methodLabel = contactMethod === 'text' ? 'Text message' : contactMethod[0].toUpperCase() + contactMethod.slice(1)
       const messageLines = []
       if (note.trim()) messageLines.push(note.trim())
+      messageLines.push(`Name: ${resolvedFirstName} ${resolvedLastName}`.trim())
       messageLines.push(`Preferred contact method: ${methodLabel}`)
       if (resolvedEmail) messageLines.push(`Email: ${resolvedEmail}`)
       if (resolvedPhone) messageLines.push(`Phone: ${resolvedPhone}`)
@@ -281,6 +367,7 @@ function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           exhibit: activeInquiryItem.id,
+          purchase_intent: true,
           message: messageLines.join('\n\n'),
         }),
       })
@@ -289,10 +376,12 @@ function Dashboard() {
         throw new Error(data.detail || `Error ${res.status}`)
       }
 
-      if (data.already_expressed) {
+      if (data.upgraded_to_prospect) {
+        setNotice('Purchase enquiry sent. Your interest has been flagged for gallery follow-up.')
+      } else if (data.already_expressed) {
         setNotice('You have already made an enquiry for this exhibit.')
       } else {
-        setNotice('Your enquiry has been sent to the gallery owner.')
+        setNotice('Your purchase enquiry has been sent to the gallery owner.')
         if (!isContactPreferenceComplete(profileData)) {
           localStorage.setItem(CONTACT_PREF_PROMPT_KEY, '1')
           setPrefPromptShownThisVisit(false)
@@ -324,7 +413,7 @@ function Dashboard() {
       <section className="dash-greeting">
         <p className="dash-eyebrow">Welcome Back</p>
         <h1 className="dash-name">{displayName}</h1>
-        <p className="dash-subtitle">Your scans, enquiries, and saved pieces</p>
+        <p className="dash-subtitle">Your scans are saved, and your interest is flagged when you enquire.</p>
       </section>
 
       {autoSavingInterest && <p className="dash-notice">Adding scanned artwork to your watchlist…</p>}
@@ -374,11 +463,15 @@ function Dashboard() {
           <p className="dash-status">
             {filter === 'Shows' && showFilter !== 'All shows'
               ? `No scans in ${showFilter} yet.`
-              : `Nothing ${filter.toLowerCase()} yet.`}
+              : filter === 'Enquired'
+                ? 'No enquiries yet. Use Enquire about purchasing on a scanned artwork.'
+                : `Nothing ${filter.toLowerCase()} yet.`}
           </p>
         )}
 
-        {visible.map((item) => (
+        {visible.map((item) => {
+          const currentStatus = normalizeStatus(item.status)
+          return (
           <article className="dash-card" key={item.id}>
             <button className="dash-card__media" type="button" onClick={() => navigate(`/exhibits/${item.id}`)}>
               <ExhibitImage exhibit={item} className="dash-card__img" />
@@ -392,28 +485,57 @@ function Dashboard() {
                 <IconArrowRight />
               </button>
             </div>
-            <span className="dash-tag">{item.status}</span>
+            <span className="dash-tag">{statusLabel(currentStatus)}</span>
             <div>
-              {item.status === 'enquired' ? (
-                <span className="dash-enquired">Enquired ✓</span>
-              ) : (
+              {currentStatus === 'prospect' ? (
+                <span className="dash-prospect">Enquired ✓ Gallery notified</span>
+              ) : currentStatus === 'lead' ? (
                 <button className="dash-enquire" type="button" onClick={() => openEnquiryModal(item)}>
-                  Enquire
+                  Enquire about purchasing
                 </button>
+              ) : currentStatus === 'watching' ? (
+                <span className="dash-enquired">Saved for later</span>
+              ) : (
+                <span className="dash-enquired">Acquired ✓</span>
               )}
             </div>
             <div className="dash-divider" />
           </article>
-        ))}
+          )
+        })}
       </div>
 
       {modalOpen && activeInquiryItem && (
         <div className="dash-modal-overlay" onClick={(event) => event.target === event.currentTarget && closeEnquiryModal()}>
           <div className="dash-modal" role="dialog" aria-modal="true" aria-label="Send enquiry to gallery">
             <h2 className="dash-modal__title">Enquire About {activeInquiryItem.title || activeInquiryItem.artist}</h2>
-            <p className="dash-modal__subtitle">Tell the gallery how you would like to be contacted.</p>
+            <p className="dash-modal__subtitle">Signal purchase intent and tell the gallery how you would like to be contacted.</p>
 
             <form onSubmit={submitEnquiry}>
+              {!hasProfileName(profileData) && (
+                <>
+                  <label className="dash-modal__label" htmlFor="enquiry-first-name">First name</label>
+                  <input
+                    id="enquiry-first-name"
+                    className="dash-modal__input"
+                    type="text"
+                    placeholder="First name"
+                    value={contactFirstName}
+                    onChange={(event) => setContactFirstName(event.target.value)}
+                  />
+
+                  <label className="dash-modal__label" htmlFor="enquiry-last-name">Last name</label>
+                  <input
+                    id="enquiry-last-name"
+                    className="dash-modal__input"
+                    type="text"
+                    placeholder="Last name"
+                    value={contactLastName}
+                    onChange={(event) => setContactLastName(event.target.value)}
+                  />
+                </>
+              )}
+
               <label className="dash-modal__label" htmlFor="enquiry-note">Note for the gallery</label>
               <textarea
                 id="enquiry-note"
@@ -485,7 +607,7 @@ function Dashboard() {
                   Cancel
                 </button>
                 <button className="dash-modal__btn dash-modal__btn--primary" type="submit" disabled={submittingInquiry}>
-                  {submittingInquiry ? 'Sending…' : 'Send enquiry'}
+                  {submittingInquiry ? 'Sending…' : 'Send purchase enquiry'}
                 </button>
               </div>
             </form>
