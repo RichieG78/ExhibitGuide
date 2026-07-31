@@ -90,8 +90,10 @@ Backend routes (Django API + admin):
 
 ## Live Application and Repository
 - Repository: this project repository (branch `react-and-rest-version`)
-- Frontend (React) hosted URL: _to be added after deployment_
-- Backend (Django REST API + admin) hosted URL: _to be added after deployment_
+- Frontend (React) hosted URL: `https://exhibitguide-react-frontend.onrender.com`
+- Backend (Django REST API + admin) hosted URL: `https://exhibitguide-1.onrender.com`
+- Start here: open the **frontend** URL. The backend URL serves the REST API and the Django
+  admin only; it has no browsable pages of its own.
 - This version deploys as two Render services; see **Deployment Runbook (Render)** below.
 - The original single-service Django application is deployed separately from `main` at
   `https://exhibitguide.onrender.com`.
@@ -709,8 +711,8 @@ plus a database — unlike the original single-service Django app on `main`:
 
 | Service | URL |
 |---------|-----|
-| Frontend (React) | _to be added after deployment_ |
-| Backend API | _to be added after deployment_ |
+| Frontend (React) | `https://exhibitguide-react-frontend.onrender.com` |
+| Backend API + admin | `https://exhibitguide-1.onrender.com` |
 
 ### Service 1 — Django API (Web Service)
 
